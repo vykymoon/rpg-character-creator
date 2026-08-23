@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <Label text="Clonar Plantilla (Prototype)" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+    <Label text="Elige un NPC base y clónalo con un nombre nuevo, sin pasar por el wizard completo."
+           style="-fx-font-size: 11px; -fx-text-fill: gray;" wrapText="true"/>
+
+    <ListView fx:id="templateListView" VBox.vgrow="ALWAYS" prefHeight="180"/>
+
+    <Label text="Nombre del nuevo personaje:"/>
+    <TextField fx:id="newNameField" promptText="Ej: Bandido #2"/>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="← Volver a la galería" onAction="#onBack"/>
+        <Button text="Clonar y guardar" onAction="#onCloneAndSave"/>
+    </HBox>
+</VBox>

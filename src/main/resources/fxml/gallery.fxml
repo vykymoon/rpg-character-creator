@@ -22,7 +22,9 @@
         <Button text="Refrescar" onAction="#onRefresh"/>
     </HBox>
 
-    <HBox alignment="CENTER_RIGHT">
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Clonar plantilla" onAction="#onCloneTemplate"/>
         <Button text="+ Crear nuevo personaje" onAction="#onCreateNew"/>
     </HBox>
+
 </VBox>

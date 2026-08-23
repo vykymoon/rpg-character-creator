@@ -16,7 +16,8 @@ import java.util.Optional;
 
 /**
  * Pantalla de galería: lista los personajes guardados usando
- * CharacterDAO.findAll(), permite ver detalle y eliminar.
+ * CharacterDAO.findAll(), permite ver detalle, eliminar, crear uno
+ * nuevo desde cero (wizard) o clonar una plantilla (Prototype).
  * Es la pantalla inicial de la app (MainApp arranca aquí).
  */
 public class GalleryController {
@@ -55,6 +56,12 @@ public class GalleryController {
         WizardSession session = new WizardSession();
         Step1NameRaceController controller = new Step1NameRaceController(session);
         SceneNavigator.goTo(event, "/fxml/step1_name_race.fxml", controller);
+    }
+
+    @FXML
+    public void onCloneTemplate(ActionEvent event) {
+        TemplateGalleryController controller = new TemplateGalleryController();
+        SceneNavigator.goTo(event, "/fxml/template_gallery.fxml", controller);
     }
 
     @FXML

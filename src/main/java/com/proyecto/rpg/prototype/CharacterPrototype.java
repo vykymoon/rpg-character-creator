@@ -1,6 +1,10 @@
 package com.proyecto.rpg.prototype;
 
+import com.proyecto.rpg.builder.CharacterBuilder;
+import com.proyecto.rpg.factory.CharacterClassFactory;
+import com.proyecto.rpg.factory.RaceFactory;
 import com.proyecto.rpg.model.Character;
+import com.proyecto.rpg.model.Skill;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,13 +16,9 @@ import java.util.Map;
  * sin tener que reconstruirlos desde cero con el Builder cada vez.
  *
  * Uso típico:
- *   CharacterPrototype registry = new CharacterPrototype();
- *   registry.registerTemplate("bandido", personajeBanditoBase);
+ *   CharacterPrototype registry = CharacterPrototype.withDefaultTemplates();
  *   Character nuevoBandido = registry.clone("bandido");
  *   nuevoBandido.setName("Bandido #2");
- *
- * Persona B: aquí puedes precargar plantillas de NPCs comunes al iniciar
- * la app (por ejemplo desde el CatalogManager / singleton).
  */
 public class CharacterPrototype {
 
@@ -42,5 +42,41 @@ public class CharacterPrototype {
 
     public Map<String, Character> getTemplates() {
         return templates;
+    }
+
+    /**
+     * Fábrica de conveniencia: crea un registro ya precargado con NPCs
+     * de ejemplo, construidos usando el propio CharacterBuilder (Builder
+     * y Prototype trabajando juntos: primero se construye la plantilla
+     * paso a paso, luego queda disponible para clonar).
+     */
+    public static CharacterPrototype withDefaultTemplates() {
+        CharacterPrototype registry = new CharacterPrototype();
+
+        Character bandido = new CharacterBuilder()
+                .withName("Bandido Base")
+                .withRace(RaceFactory.createRace(RaceFactory.RaceType.HUMANO))
+                .withClass(CharacterClassFactory.createClass(CharacterClassFactory.ClassType.PICARO))
+                .addSkill(new Skill("Sigilo", "Reduce la probabilidad de ser detectado", 5))
+                .build();
+        registry.registerTemplate("bandido", bandido);
+
+        Character guardia = new CharacterBuilder()
+                .withName("Guardia Real")
+                .withRace(RaceFactory.createRace(RaceFactory.RaceType.ENANO))
+                .withClass(CharacterClassFactory.createClass(CharacterClassFactory.ClassType.GUERRERO))
+                .addSkill(new Skill("Golpe Certero", "Ataque físico con bono de precisión", 0))
+                .build();
+        registry.registerTemplate("guardia", guardia);
+
+        Character mago = new CharacterBuilder()
+                .withName("Mago Errante")
+                .withRace(RaceFactory.createRace(RaceFactory.RaceType.ELFO))
+                .withClass(CharacterClassFactory.createClass(CharacterClassFactory.ClassType.MAGO))
+                .addSkill(new Skill("Bola de Fuego", "Daño mágico en área", 15))
+                .build();
+        registry.registerTemplate("mago", mago);
+
+        return registry;
     }
 }
