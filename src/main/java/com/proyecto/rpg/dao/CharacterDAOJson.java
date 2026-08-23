@@ -97,4 +97,14 @@ public class CharacterDAOJson implements CharacterDAO {
         all.removeIf(c -> c.getId().equals(id));
         writeAll(all);
     }
+
+    @Override
+    public boolean existsByName(String name) {
+        if (name == null) {
+            return false;
+        }
+        String normalized = name.trim().toLowerCase();
+        return readAll().stream()
+                .anyMatch(c -> c.getName() != null && c.getName().trim().toLowerCase().equals(normalized));
+    }
 }

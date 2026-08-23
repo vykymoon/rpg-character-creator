@@ -61,6 +61,11 @@ public class TemplateGalleryController {
             return;
         }
 
+        if (characterDAO.existsByName(newName)) {
+            showWarning("Ya existe un personaje guardado con el nombre \"" + newName + "\". Usa otro nombre.");
+            return;
+        }
+
         Character clone = prototype.clone(key);
         clone.setName(newName);
         characterDAO.save(clone);

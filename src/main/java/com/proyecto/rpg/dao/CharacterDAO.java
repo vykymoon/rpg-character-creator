@@ -25,4 +25,12 @@ public interface CharacterDAO {
     List<Character> findAll();
 
     void delete(String id);
+
+    /**
+     * Verifica si ya existe un personaje guardado con ese nombre
+     * (comparación sin distinguir mayúsculas/minúsculas ni espacios
+     * al inicio/final). Usado para evitar nombres duplicados al crear
+     * o clonar personajes.
+     */
+    boolean existsByName(String name);
 }

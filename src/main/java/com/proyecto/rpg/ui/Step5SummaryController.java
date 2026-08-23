@@ -66,6 +66,15 @@ public class Step5SummaryController {
     @FXML
     public void onConfirm(ActionEvent event) {
         try {
+            if (characterDAO.existsByName(session.getName())) {
+                Alert warning = new Alert(Alert.AlertType.WARNING);
+                warning.setTitle("Nombre duplicado");
+                warning.setHeaderText(null);
+                warning.setContentText("Ya existe un personaje guardado con el nombre \"" + session.getName() + "\". Usa otro nombre.");
+                warning.showAndWait();
+                return;
+            }
+
             CharacterBuilder builder = new CharacterBuilder()
                     .withName(session.getName())
                     .withRace(session.getRace())
@@ -87,7 +96,6 @@ public class Step5SummaryController {
             alert.setContentText("Se guardó correctamente: " + character.getName());
             alert.showAndWait();
 
-            // Vuelve a la galería para ver el personaje recién creado.
             GalleryController gallery = new GalleryController();
             SceneNavigator.goTo(event, "/fxml/gallery.fxml", gallery);
 
