@@ -6,25 +6,21 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-import java.util.Objects;
-
 /**
- * Punto de entrada de la aplicación. Carga el wizard de creación de
- * personajes como pantalla inicial.
+ * Punto de entrada de la aplicación. Arranca en la galería de
+ * personajes; desde ahí se accede al wizard de creación.
  *
  * Para correr la app: mvn javafx:run
  */
 public class MainApp extends Application {
 
     @Override
-    public void start(Stage stage) throws IOException {
-        FXMLLoader loader = new FXMLLoader(
-                Objects.requireNonNull(getClass().getResource("/fxml/wizard.fxml"))
-        );
+    public void start(Stage stage) throws Exception {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/gallery.fxml"));
+        loader.setController(new GalleryController());
         Parent root = loader.load();
 
-        Scene scene = new Scene(root, 720, 520);
+        Scene scene = new Scene(root, 480, 460);
         stage.setTitle("RPG Character Creator");
         stage.setScene(scene);
         stage.show();

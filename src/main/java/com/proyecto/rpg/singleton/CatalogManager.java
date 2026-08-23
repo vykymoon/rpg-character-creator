@@ -3,6 +3,7 @@ package com.proyecto.rpg.singleton;
 import com.proyecto.rpg.factory.CharacterClassFactory;
 import com.proyecto.rpg.factory.RaceFactory;
 import com.proyecto.rpg.model.CharacterClass;
+import com.proyecto.rpg.model.Outfit;
 import com.proyecto.rpg.model.Race;
 import com.proyecto.rpg.model.Skill;
 
@@ -24,11 +25,13 @@ public class CatalogManager {
     private final List<Race> availableRaces;
     private final List<CharacterClass> availableClasses;
     private final List<Skill> availableSkills;
+    private final List<Outfit> availableOutfits;
 
     private CatalogManager() {
         availableRaces = new ArrayList<>();
         availableClasses = new ArrayList<>();
         availableSkills = new ArrayList<>();
+        availableOutfits = new ArrayList<>();
         loadCatalog();
     }
 
@@ -55,6 +58,14 @@ public class CatalogManager {
         availableSkills.add(new Skill("Bola de Fuego", "Daño mágico en área", 15));
         availableSkills.add(new Skill("Sigilo", "Reduce la probabilidad de ser detectado", 5));
         availableSkills.add(new Skill("Curación Menor", "Restaura una pequeña cantidad de vida", 10));
+
+        // Vestuario base de ejemplo.
+        // Persona B: reemplazar spriteRef por rutas reales cuando haya arte.
+        availableOutfits.add(new Outfit("Armadura de Cuero", "armadura", "sprites/armor_leather.png"));
+        availableOutfits.add(new Outfit("Armadura de Placas", "armadura", "sprites/armor_plate.png"));
+        availableOutfits.add(new Outfit("Túnica de Mago", "armadura", "sprites/robe_mage.png"));
+        availableOutfits.add(new Outfit("Casco de Guerra", "casco", "sprites/helmet_war.png"));
+        availableOutfits.add(new Outfit("Capa Élfica", "capa", "sprites/cape_elven.png"));
     }
 
     public List<Race> getAvailableRaces() {
@@ -67,5 +78,9 @@ public class CatalogManager {
 
     public List<Skill> getAvailableSkills() {
         return availableSkills;
+    }
+
+    public List<Outfit> getAvailableOutfits() {
+        return availableOutfits;
     }
 }

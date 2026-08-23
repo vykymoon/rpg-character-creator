@@ -87,9 +87,9 @@ public class Step5SummaryController {
             alert.setContentText("Se guardó correctamente: " + character.getName());
             alert.showAndWait();
 
-            WizardSession freshSession = new WizardSession();
-            Step1NameRaceController restart = new Step1NameRaceController(freshSession);
-            SceneNavigator.goTo(event, "/fxml/step1_name_race.fxml", restart);
+            // Vuelve a la galería para ver el personaje recién creado.
+            GalleryController gallery = new GalleryController();
+            SceneNavigator.goTo(event, "/fxml/gallery.fxml", gallery);
 
         } catch (IllegalStateException e) {
             Alert alert = new Alert(Alert.AlertType.WARNING);

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <Label text="Mis Personajes" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+
+    <ListView fx:id="characterListView" VBox.vgrow="ALWAYS" prefHeight="260"/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button text="Ver detalle" onAction="#onViewDetail"/>
+        <Button text="Eliminar" onAction="#onDelete"/>
+        <Button text="Refrescar" onAction="#onRefresh"/>
+    </HBox>
+
+    <HBox alignment="CENTER_RIGHT">
+        <Button text="+ Crear nuevo personaje" onAction="#onCreateNew"/>
+    </HBox>
+</VBox>
