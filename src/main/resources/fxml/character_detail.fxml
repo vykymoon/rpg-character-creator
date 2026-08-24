@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
@@ -27,6 +28,8 @@
         <Label fx:id="raceLabel" styleClass="tag-race" text="Raza"/>
         <Label fx:id="classLabel" styleClass="tag-class" text="Clase"/>
     </HBox>
+
+    <ImageView fx:id="avatarImage" fitWidth="140" fitHeight="140" preserveRatio="true" styleClass="avatar-frame"/>
 
     <Separator/>
 
