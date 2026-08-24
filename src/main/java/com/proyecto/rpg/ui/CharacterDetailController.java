@@ -80,7 +80,7 @@ public class CharacterDetailController {
      */
     private Image resolveAvatar() {
         String raceName = character.getRace() != null ? character.getRace().getName() : "default";
-        String path = "/sprites/avatars/" + normalize(raceName) + ".png";
+        String path = "/sprites/avatars/" + normalize(raceName) + ".jpg";
 
         var stream = getClass().getResourceAsStream(path);
         if (stream == null) {
