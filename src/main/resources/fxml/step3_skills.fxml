@@ -14,7 +14,7 @@
 
     <Label text="Paso 3 de 5 — Habilidades" style="-fx-font-size: 12px; -fx-text-fill: gray;"/>
     <Label text="Elige Habilidades" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
-    <Label text="Selección múltiple (opcional). Ctrl+click para elegir varias." style="-fx-font-size: 11px; -fx-text-fill: gray;"/>
+    <Label fx:id="hintLabel" wrapText="true" text="Selección múltiple (opcional). Ctrl+click para elegir varias." style="-fx-font-size: 11px; -fx-text-fill: gray;"/>
 
     <ListView fx:id="skillsList" VBox.vgrow="ALWAYS" prefHeight="220"/>
 

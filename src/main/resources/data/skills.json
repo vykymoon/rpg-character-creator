@@ -1,0 +1,124 @@
+[
+  {
+    "id": "golpe_certero",
+    "name": "Golpe Certero",
+    "description": "Ataque físico con bono de precisión.",
+    "manaCost": 0,
+    "allowedRaces": [],
+    "allowedClasses": []
+  },
+  {
+    "id": "bola_de_fuego",
+    "name": "Bola de Fuego",
+    "description": "Daño mágico en área.",
+    "manaCost": 15,
+    "allowedRaces": [],
+    "allowedClasses": [
+      "mago"
+    ]
+  },
+  {
+    "id": "sigilo",
+    "name": "Sigilo",
+    "description": "Reduce la probabilidad de ser detectado.",
+    "manaCost": 5,
+    "allowedRaces": [
+      "elfo",
+      "humano",
+      "mediano"
+    ],
+    "allowedClasses": []
+  },
+  {
+    "id": "curacion_menor",
+    "name": "Curación Menor",
+    "description": "Restaura una pequeña cantidad de vida.",
+    "manaCost": 10,
+    "allowedRaces": [],
+    "allowedClasses": [
+      "clerigo",
+      "druida"
+    ]
+  },
+  {
+    "id": "furia_sangrienta",
+    "name": "Furia Sangrienta",
+    "description": "Cambia defensa por daño durante varios turnos.",
+    "manaCost": 0,
+    "allowedRaces": [
+      "orco"
+    ],
+    "allowedClasses": []
+  },
+  {
+    "id": "aliento_de_fuego",
+    "name": "Aliento de Fuego",
+    "description": "Cono de llamas a corta distancia.",
+    "manaCost": 12,
+    "allowedRaces": [
+      "draconiano"
+    ],
+    "allowedClasses": []
+  },
+  {
+    "id": "resistencia_petrea",
+    "name": "Resistencia Pétrea",
+    "description": "La piel endurece y absorbe parte del daño.",
+    "manaCost": 8,
+    "allowedRaces": [
+      "enano"
+    ],
+    "allowedClasses": []
+  },
+  {
+    "id": "truco_menor",
+    "name": "Truco Menor",
+    "description": "Ilusión breve que confunde a un enemigo.",
+    "manaCost": 4,
+    "allowedRaces": [
+      "gnomo"
+    ],
+    "allowedClasses": []
+  },
+  {
+    "id": "vista_de_aguila",
+    "name": "Vista de Águila",
+    "description": "Amplía el alcance y revela enemigos lejanos.",
+    "manaCost": 6,
+    "allowedRaces": [],
+    "allowedClasses": [
+      "arquero"
+    ]
+  },
+  {
+    "id": "golpe_escudo",
+    "name": "Golpe de Escudo",
+    "description": "Aturde al enemigo y lo obliga a retroceder.",
+    "manaCost": 5,
+    "allowedRaces": [],
+    "allowedClasses": [
+      "guerrero"
+    ]
+  },
+  {
+    "id": "paso_sombrio",
+    "name": "Paso Sombrío",
+    "description": "Desaparece un instante y reaparece detrás del objetivo.",
+    "manaCost": 14,
+    "allowedRaces": [],
+    "allowedClasses": [
+      "picaro",
+      "mago"
+    ]
+  },
+  {
+    "id": "enraizar",
+    "name": "Enraizar",
+    "description": "Raíces inmovilizan al objetivo en el sitio.",
+    "manaCost": 9,
+    "allowedRaces": [],
+    "allowedClasses": [
+      "druida"
+    ]
+  }
+]
