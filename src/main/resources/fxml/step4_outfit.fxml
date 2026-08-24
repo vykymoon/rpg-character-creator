@@ -14,9 +14,9 @@
 
     <Label text="Paso 4 de 5 — Vestuario" style="-fx-font-size: 12px; -fx-text-fill: gray;"/>
     <Label text="Elige Vestuario" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
-    <Label text="Selección múltiple (opcional). Ctrl+click para elegir varias." style="-fx-font-size: 11px; -fx-text-fill: gray;"/>
+    <Label fx:id="hintLabel" wrapText="true" text="Selección múltiple (opcional). Ctrl+click para elegir varias." style="-fx-font-size: 11px; -fx-text-fill: gray;"/>
 
-    <ListView fx:id="outfitsList" VBox.vgrow="ALWAYS" prefHeight="220"/>
+    <ListView fx:id="outfitsList" VBox.vgrow="ALWAYS" prefHeight="300"/>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button text="← Atrás" onAction="#onBack"/>

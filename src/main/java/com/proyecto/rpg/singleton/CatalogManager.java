@@ -1,20 +1,32 @@
 package com.proyecto.rpg.singleton;
 
 import com.proyecto.rpg.factory.CharacterClassFactory;
+import com.proyecto.rpg.factory.OutfitFactory;
 import com.proyecto.rpg.factory.RaceFactory;
+import com.proyecto.rpg.factory.SkillFactory;
 import com.proyecto.rpg.model.CharacterClass;
 import com.proyecto.rpg.model.Outfit;
 import com.proyecto.rpg.model.Race;
 import com.proyecto.rpg.model.Skill;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Patrón Singleton.
- * Única instancia en memoria del catálogo de razas, clases y habilidades
- * disponibles en el juego. Evita crear/recargar estos datos repetidamente
- * en cada pantalla de la UI.
+ * Única instancia en memoria del catálogo completo del juego: razas,
+ * clases, habilidades y vestuario. Evita releer estos datos en cada
+ * pantalla de la UI.
+ *
+ * Los cuatro catálogos son data-driven: cada uno lo produce su Factory
+ * leyendo un archivo en src/main/resources/data/. Este Singleton no
+ * conoce ningún dato del juego, solo los cachea y los expone.
+ *
+ * Ojo: expone las listas COMPLETAS, sin filtrar. El filtrado por raza o
+ * clase es responsabilidad de quien las consume (los pasos 3 y 4 del
+ * wizard), no del catálogo.
  *
  * Uso: CatalogManager.getInstance().getAvailableRaces()
  */
@@ -22,16 +34,12 @@ public class CatalogManager {
 
     private static CatalogManager instance;
 
-    private final List<Race> availableRaces;
-    private final List<CharacterClass> availableClasses;
-    private final List<Skill> availableSkills;
-    private final List<Outfit> availableOutfits;
+    private final List<Race> availableRaces = new ArrayList<>();
+    private final List<CharacterClass> availableClasses = new ArrayList<>();
+    private final List<Skill> availableSkills = new ArrayList<>();
+    private final List<Outfit> availableOutfits = new ArrayList<>();
 
     private CatalogManager() {
-        availableRaces = new ArrayList<>();
-        availableClasses = new ArrayList<>();
-        availableSkills = new ArrayList<>();
-        availableOutfits = new ArrayList<>();
         loadCatalog();
     }
 
@@ -43,44 +51,83 @@ public class CatalogManager {
     }
 
     private void loadCatalog() {
-        // Razas y clases vía Factory (mínimo funcional).
-        for (RaceFactory.RaceType type : RaceFactory.RaceType.values()) {
-            availableRaces.add(RaceFactory.createRace(type));
-        }
-        for (CharacterClassFactory.ClassType type : CharacterClassFactory.ClassType.values()) {
-            availableClasses.add(CharacterClassFactory.createClass(type));
-        }
+        availableRaces.addAll(RaceFactory.createAll());
+        availableClasses.addAll(CharacterClassFactory.createAll());
+        availableSkills.addAll(SkillFactory.createAll());
+        availableOutfits.addAll(OutfitFactory.createAll());
+    }
 
-        // Habilidades base de ejemplo.
-        // Persona A/B: pueden mover esto a resources/data/skills.json
-        // y cargarlo con Gson si prefieren catálogo data-driven.
-        availableSkills.add(new Skill("Golpe Certero", "Ataque físico con bono de precisión", 0));
-        availableSkills.add(new Skill("Bola de Fuego", "Daño mágico en área", 15));
-        availableSkills.add(new Skill("Sigilo", "Reduce la probabilidad de ser detectado", 5));
-        availableSkills.add(new Skill("Curación Menor", "Restaura una pequeña cantidad de vida", 10));
+    /**
+     * Vuelve a leer los cuatro catálogos desde disco sin reiniciar la app.
+     * Útil para probar cambios en los JSON en caliente.
+     */
+    public synchronized void reload() {
+        RaceFactory.reload();
+        CharacterClassFactory.reload();
+        SkillFactory.reload();
+        OutfitFactory.reload();
 
-        // Vestuario base de ejemplo.
-        // Persona B: reemplazar spriteRef por rutas reales cuando haya arte.
-        availableOutfits.add(new Outfit("Armadura de Cuero", "armadura", "sprites/armor_leather.png"));
-        availableOutfits.add(new Outfit("Armadura de Placas", "armadura", "sprites/armor_plate.png"));
-        availableOutfits.add(new Outfit("Túnica de Mago", "armadura", "sprites/robe_mage.png"));
-        availableOutfits.add(new Outfit("Casco de Guerra", "casco", "sprites/helmet_war.png"));
-        availableOutfits.add(new Outfit("Capa Élfica", "capa", "sprites/cape_elven.png"));
+        availableRaces.clear();
+        availableClasses.clear();
+        availableSkills.clear();
+        availableOutfits.clear();
+
+        loadCatalog();
     }
 
     public List<Race> getAvailableRaces() {
-        return availableRaces;
+        return Collections.unmodifiableList(availableRaces);
     }
 
     public List<CharacterClass> getAvailableClasses() {
-        return availableClasses;
+        return Collections.unmodifiableList(availableClasses);
     }
 
     public List<Skill> getAvailableSkills() {
-        return availableSkills;
+        return Collections.unmodifiableList(availableSkills);
     }
 
     public List<Outfit> getAvailableOutfits() {
-        return availableOutfits;
+        return Collections.unmodifiableList(availableOutfits);
+    }
+
+    /**
+     * Busca una raza del catálogo por id. Sirve para reconciliar un
+     * personaje leído del JSON con la instancia viva del catálogo.
+     */
+    public Optional<Race> findRaceById(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return availableRaces.stream()
+                .filter(r -> id.equalsIgnoreCase(r.getId()))
+                .findFirst();
+    }
+
+    public Optional<CharacterClass> findClassById(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return availableClasses.stream()
+                .filter(c -> id.equalsIgnoreCase(c.getId()))
+                .findFirst();
+    }
+
+    public Optional<Skill> findSkillById(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return availableSkills.stream()
+                .filter(s -> id.equalsIgnoreCase(s.getId()))
+                .findFirst();
+    }
+
+    public Optional<Outfit> findOutfitById(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return availableOutfits.stream()
+                .filter(o -> id.equalsIgnoreCase(o.getId()))
+                .findFirst();
     }
 }

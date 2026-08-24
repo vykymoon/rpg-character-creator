@@ -1,0 +1,65 @@
+[
+  {
+    "id": "humano",
+    "name": "Humano",
+    "description": "Equilibrado en todo, sin debilidades marcadas.",
+    "baseStrength": 5,
+    "baseDexterity": 5,
+    "baseIntelligence": 5,
+    "baseVitality": 5
+  },
+  {
+    "id": "elfo",
+    "name": "Elfo",
+    "description": "Ágil e intelectual, pero físicamente frágil.",
+    "baseStrength": 3,
+    "baseDexterity": 7,
+    "baseIntelligence": 6,
+    "baseVitality": 4
+  },
+  {
+    "id": "orco",
+    "name": "Orco",
+    "description": "Fuerza y resistencia brutales a costa de la mente.",
+    "baseStrength": 8,
+    "baseDexterity": 3,
+    "baseIntelligence": 2,
+    "baseVitality": 7
+  },
+  {
+    "id": "enano",
+    "name": "Enano",
+    "description": "Resistente y fuerte, lento pero difícil de derribar.",
+    "baseStrength": 6,
+    "baseDexterity": 3,
+    "baseIntelligence": 4,
+    "baseVitality": 7
+  },
+  {
+    "id": "mediano",
+    "name": "Mediano",
+    "description": "Pequeño y escurridizo; sobrevive por astucia, no por fuerza.",
+    "baseStrength": 2,
+    "baseDexterity": 8,
+    "baseIntelligence": 5,
+    "baseVitality": 4
+  },
+  {
+    "id": "draconiano",
+    "name": "Draconiano",
+    "description": "Escamas duras y sangre de fuego; torpe pero temible.",
+    "baseStrength": 6,
+    "baseDexterity": 4,
+    "baseIntelligence": 4,
+    "baseVitality": 6
+  },
+  {
+    "id": "gnomo",
+    "name": "Gnomo",
+    "description": "Frágil de cuerpo, brillante de mente; vive entre inventos y runas.",
+    "baseStrength": 2,
+    "baseDexterity": 5,
+    "baseIntelligence": 8,
+    "baseVitality": 5
+  }
+]

@@ -55,24 +55,24 @@ public class CharacterPrototype {
 
         Character bandido = new CharacterBuilder()
                 .withName("Bandido Base")
-                .withRace(RaceFactory.createRace(RaceFactory.RaceType.HUMANO))
-                .withClass(CharacterClassFactory.createClass(CharacterClassFactory.ClassType.PICARO))
+                .withRace(RaceFactory.createRace("humano"))
+                .withClass(CharacterClassFactory.createClass("picaro"))
                 .addSkill(new Skill("Sigilo", "Reduce la probabilidad de ser detectado", 5))
                 .build();
         registry.registerTemplate("bandido", bandido);
 
         Character guardia = new CharacterBuilder()
                 .withName("Guardia Real")
-                .withRace(RaceFactory.createRace(RaceFactory.RaceType.ENANO))
-                .withClass(CharacterClassFactory.createClass(CharacterClassFactory.ClassType.GUERRERO))
+                .withRace(RaceFactory.createRace("enano"))
+                .withClass(CharacterClassFactory.createClass("guerrero"))
                 .addSkill(new Skill("Golpe Certero", "Ataque físico con bono de precisión", 0))
                 .build();
         registry.registerTemplate("guardia", guardia);
 
         Character mago = new CharacterBuilder()
                 .withName("Mago Errante")
-                .withRace(RaceFactory.createRace(RaceFactory.RaceType.ELFO))
-                .withClass(CharacterClassFactory.createClass(CharacterClassFactory.ClassType.MAGO))
+                .withRace(RaceFactory.createRace("elfo"))
+                .withClass(CharacterClassFactory.createClass("mago"))
                 .addSkill(new Skill("Bola de Fuego", "Daño mágico en área", 15))
                 .build();
         registry.registerTemplate("mago", mago);
