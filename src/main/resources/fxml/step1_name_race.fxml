@@ -7,6 +7,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
 
 <VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
     <padding>
@@ -22,7 +23,9 @@
     <Label text="Raza:"/>
     <ComboBox fx:id="raceCombo" maxWidth="Infinity" promptText="Elige una raza"/>
 
-    <HBox alignment="CENTER_RIGHT">
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Button text="← Menú principal" onAction="#onBackToMenu"/>
+        <javafx.scene.layout.Region HBox.hgrow="ALWAYS"/>
         <Button text="Siguiente →" onAction="#onNext"/>
     </HBox>
 </VBox>

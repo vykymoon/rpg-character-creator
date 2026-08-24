@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+    No lleva fx:controller: siguiendo el patrón del proyecto, el controller
+    se instancia a mano (GalleryController lo hace con `new CharacterDetailController(selected)`)
+    porque necesita recibir el Character por constructor.
+-->
+<VBox spacing="16" alignment="TOP_CENTER" styleClass="detail-root" prefWidth="420"
+      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+    <padding>
+        <Insets top="22" right="26" bottom="18" left="26"/>
+    </padding>
+
+    <Label fx:id="nameLabel" styleClass="detail-name" text="Nombre"/>
+
+    <HBox spacing="10" alignment="CENTER" styleClass="detail-tags">
+        <Label fx:id="raceLabel" styleClass="tag-race" text="Raza"/>
+        <Label fx:id="classLabel" styleClass="tag-class" text="Clase"/>
+    </HBox>
+
+    <Separator/>
+
+    <Label text="ATRIBUTOS" styleClass="section-title"/>
+    <GridPane hgap="10" vgap="8" styleClass="stats-grid">
+        <columnConstraints>
+            <ColumnConstraints minWidth="95"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+            <ColumnConstraints minWidth="28"/>
+        </columnConstraints>
+
+        <Label text="Fuerza" styleClass="stat-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <ProgressBar fx:id="strBar" styleClass="stat-bar, stat-bar-str" maxWidth="Infinity"
+                     GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+        <Label fx:id="strValue" styleClass="stat-value" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+
+        <Label text="Destreza" styleClass="stat-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <ProgressBar fx:id="dexBar" styleClass="stat-bar, stat-bar-dex" maxWidth="Infinity"
+                     GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        <Label fx:id="dexValue" styleClass="stat-value" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+
+        <Label text="Inteligencia" styleClass="stat-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <ProgressBar fx:id="intBar" styleClass="stat-bar, stat-bar-int" maxWidth="Infinity"
+                     GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <Label fx:id="intValue" styleClass="stat-value" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+
+        <Label text="Vitalidad" styleClass="stat-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <ProgressBar fx:id="vitBar" styleClass="stat-bar, stat-bar-vit" maxWidth="Infinity"
+                     GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        <Label fx:id="vitValue" styleClass="stat-value" GridPane.rowIndex="3" GridPane.columnIndex="2"/>
+    </GridPane>
+
+    <Separator/>
+
+    <Label text="HABILIDADES" styleClass="section-title"/>
+    <VBox fx:id="skillsBox" spacing="6" styleClass="chip-list"/>
+
+    <Label text="VESTUARIO" styleClass="section-title"/>
+    <VBox fx:id="outfitsBox" spacing="6" styleClass="chip-list"/>
+
+    <Button text="Cerrar" onAction="#onClose" styleClass="close-button"/>
+</VBox>

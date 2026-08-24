@@ -21,6 +21,8 @@ public class MainApp extends Application {
         Parent root = loader.load();
 
         Scene scene = new Scene(root, 480, 460);
+        scene.getStylesheets().add(getClass().getResource("/css/retro-theme.css").toExternalForm());
+
         stage.setTitle("RPG Character Creator");
         stage.setScene(scene);
         stage.show();

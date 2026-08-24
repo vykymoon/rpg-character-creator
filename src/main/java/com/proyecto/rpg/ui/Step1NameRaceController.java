@@ -60,6 +60,12 @@ public class Step1NameRaceController {
         SceneNavigator.goTo(event, "/fxml/step2_class.fxml", next);
     }
 
+    @FXML
+    public void onBackToMenu(ActionEvent event) {
+        GalleryController gallery = new GalleryController();
+        SceneNavigator.goTo(event, "/fxml/gallery.fxml", gallery);
+    }
+
     private void showWarning(String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Faltan datos");
