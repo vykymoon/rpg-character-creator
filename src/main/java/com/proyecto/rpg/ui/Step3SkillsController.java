@@ -5,8 +5,11 @@ import com.proyecto.rpg.singleton.CatalogManager;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
+
+import java.util.List;
 
 /**
  * Paso 3 del wizard: selección múltiple de habilidades.
@@ -17,6 +20,9 @@ public class Step3SkillsController {
     @FXML
     private ListView<Skill> skillsList;
 
+    @FXML
+    private Label hintLabel;
+
     private final WizardSession session;
 
     public Step3SkillsController(WizardSession session) {
@@ -25,8 +31,16 @@ public class Step3SkillsController {
 
     @FXML
     public void initialize() {
-        skillsList.setItems(FXCollections.observableArrayList(
-                CatalogManager.getInstance().getAvailableSkills()));
+        // Solo lo disponible para la raza (Paso 1) y la clase (Paso 2).
+        List<Skill> disponibles = CatalogManager.getInstance().getAvailableSkills().stream()
+                .filter(skill -> skill.isAvailableFor(session.getRace(), session.getCharacterClass()))
+                .toList();
+        skillsList.setItems(FXCollections.observableArrayList(disponibles));
+
+        int ocultas = CatalogManager.getInstance().getAvailableSkills().size() - disponibles.size();
+        if (ocultas > 0 && hintLabel != null) {
+            hintLabel.setText(ocultas + " habilidad(es) no aparecen: requieren otra raza o clase.");
+        }
         skillsList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         for (Skill skill : session.getSelectedSkills()) {

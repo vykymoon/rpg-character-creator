@@ -40,12 +40,31 @@ public class CharacterBuilder {
         return this;
     }
 
+    /**
+     * Última barrera contra combinaciones inválidas: si la habilidad está
+     * restringida a otras razas, rechaza. La UI ya filtra, pero esto cubre
+     * el caso de una sesión con datos viejos o un bug de navegación.
+     *
+     * Importante: withRace() y withClass() deben llamarse ANTES que
+     * addSkill(), si no la validación no tiene contra qué comparar.
+     */
     public CharacterBuilder addSkill(Skill skill) {
+        if (!skill.isAvailableFor(character.getRace(), character.getCharacterClass())) {
+            throw new IllegalStateException(
+                    skill.getName() + " no está disponible para este personaje ("
+                            + skill.getRequirementLabel() + ").");
+        }
         character.addSkill(skill);
         return this;
     }
 
+    /** Misma validación que addSkill(), para vestuario. */
     public CharacterBuilder addOutfit(Outfit outfit) {
+        if (!outfit.isAvailableFor(character.getRace(), character.getCharacterClass())) {
+            throw new IllegalStateException(
+                    outfit.getName() + " no está disponible para este personaje ("
+                            + outfit.getRequirementLabel() + ").");
+        }
         character.addOutfit(outfit);
         return this;
     }

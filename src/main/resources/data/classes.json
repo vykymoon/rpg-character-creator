@@ -1,0 +1,56 @@
+[
+  {
+    "id": "guerrero",
+    "name": "Guerrero",
+    "description": "Combate cuerpo a cuerpo y aguante en primera línea.",
+    "bonusStrength": 5,
+    "bonusDexterity": 2,
+    "bonusIntelligence": 0,
+    "bonusVitality": 4
+  },
+  {
+    "id": "mago",
+    "name": "Mago",
+    "description": "Daño mágico a distancia, muy débil en combate directo.",
+    "bonusStrength": 0,
+    "bonusDexterity": 2,
+    "bonusIntelligence": 6,
+    "bonusVitality": 1
+  },
+  {
+    "id": "picaro",
+    "name": "Pícaro",
+    "description": "Velocidad, sigilo y golpes precisos por la espalda.",
+    "bonusStrength": 2,
+    "bonusDexterity": 6,
+    "bonusIntelligence": 1,
+    "bonusVitality": 2
+  },
+  {
+    "id": "clerigo",
+    "name": "Clérigo",
+    "description": "Soporte y curación, con algo de aguante en combate.",
+    "bonusStrength": 2,
+    "bonusDexterity": 1,
+    "bonusIntelligence": 5,
+    "bonusVitality": 3
+  },
+  {
+    "id": "arquero",
+    "name": "Arquero",
+    "description": "Daño sostenido a distancia; depende de mantener la distancia.",
+    "bonusStrength": 2,
+    "bonusDexterity": 6,
+    "bonusIntelligence": 1,
+    "bonusVitality": 2
+  },
+  {
+    "id": "druida",
+    "name": "Druida",
+    "description": "Magia natural: cura, control del terreno y algo de aguante.",
+    "bonusStrength": 1,
+    "bonusDexterity": 2,
+    "bonusIntelligence": 6,
+    "bonusVitality": 2
+  }
+]

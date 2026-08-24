@@ -1,0 +1,100 @@
+[
+  {
+    "id": "armor_leather",
+    "name": "Armadura de Cuero",
+    "slot": "armadura",
+    "spriteRef": "sprites/armor_leather.png",
+    "allowedRaces": [],
+    "allowedClasses": []
+  },
+  {
+    "id": "armor_plate",
+    "name": "Armadura de Placas",
+    "slot": "armadura",
+    "spriteRef": "sprites/armor_plate.png",
+    "allowedRaces": [],
+    "allowedClasses": [
+      "guerrero",
+      "clerigo"
+    ]
+  },
+  {
+    "id": "robe_mage",
+    "name": "Túnica de Mago",
+    "slot": "armadura",
+    "spriteRef": "sprites/robe_mage.png",
+    "allowedRaces": [],
+    "allowedClasses": [
+      "mago",
+      "druida"
+    ]
+  },
+  {
+    "id": "helmet_war",
+    "name": "Casco de Guerra",
+    "slot": "casco",
+    "spriteRef": "sprites/helmet_war.png",
+    "allowedRaces": [],
+    "allowedClasses": []
+  },
+  {
+    "id": "cape_elven",
+    "name": "Capa Élfica",
+    "slot": "capa",
+    "spriteRef": "sprites/cape_elven.png",
+    "allowedRaces": [
+      "elfo"
+    ],
+    "allowedClasses": []
+  },
+  {
+    "id": "hood_shadow",
+    "name": "Capucha de Sombras",
+    "slot": "casco",
+    "spriteRef": "sprites/hood_shadow.png",
+    "allowedRaces": [],
+    "allowedClasses": [
+      "picaro"
+    ]
+  },
+  {
+    "id": "shield_oak",
+    "name": "Escudo de Roble",
+    "slot": "escudo",
+    "spriteRef": "sprites/shield_oak.png",
+    "allowedRaces": [],
+    "allowedClasses": [
+      "guerrero",
+      "clerigo"
+    ]
+  },
+  {
+    "id": "cloak_runic",
+    "name": "Manto Rúnico",
+    "slot": "capa",
+    "spriteRef": "sprites/cloak_runic.png",
+    "allowedRaces": [],
+    "allowedClasses": [
+      "mago",
+      "druida"
+    ]
+  },
+  {
+    "id": "boots_light",
+    "name": "Botas Ligeras",
+    "slot": "botas",
+    "spriteRef": "sprites/boots_light.png",
+    "allowedRaces": [],
+    "allowedClasses": []
+  },
+  {
+    "id": "helmet_dragon",
+    "name": "Yelmo Dracónico",
+    "slot": "casco",
+    "spriteRef": "sprites/helmet_dragon.png",
+    "allowedRaces": [
+      "draconiano"
+    ],
+    "allowedClasses": []
+  }
+]
