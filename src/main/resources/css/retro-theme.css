@@ -281,3 +281,19 @@
     -fx-text-fill: #1a1a2e;
 }
 
+.step-caption {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9a9ab0;
+}
+
+.summary-box .content {
+    -fx-background-color: #0f0f1c;
+}
+.summary-box .text {
+    -fx-fill: #f4e9d8;
+}
+.summary-box {
+    -fx-text-fill: #f4e9d8;
+    -fx-highlight-fill: #e0a92e;
+    -fx-highlight-text-fill: #1a1a2e;
+}

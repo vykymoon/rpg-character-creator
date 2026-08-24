@@ -12,10 +12,10 @@
         <Insets top="24" right="24" bottom="24" left="24"/>
     </padding>
 
-    <Label text="Paso 5 de 5 — Resumen" style="-fx-font-size: 12px; -fx-text-fill: gray;"/>
-    <Label text="Confirma tu Personaje" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+    <Label text="Paso 5 de 5 — Resumen" styleClass="step-caption"/>
+    <Label text="Confirma tu Personaje" styleClass="detail-name" wrapText="true" maxWidth="Infinity"/>
 
-    <TextArea fx:id="summaryArea" editable="false" wrapText="true" prefHeight="220"/>
+    <TextArea fx:id="summaryArea" editable="false" wrapText="true" prefHeight="220" styleClass="summary-box"/>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button text="← Atrás" onAction="#onBack"/>

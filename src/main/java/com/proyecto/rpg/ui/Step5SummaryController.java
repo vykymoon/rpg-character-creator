@@ -8,14 +8,8 @@ import com.proyecto.rpg.model.Outfit;
 import com.proyecto.rpg.model.Skill;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.TextArea;
 
-/**
- * Paso 5 (final) del wizard: muestra el resumen de todo lo elegido y,
- * al confirmar, arma el Character con CharacterBuilder y lo guarda con
- * CharacterDAO. Aquí es donde Builder + DAO se conectan.
- */
 public class Step5SummaryController {
 
     @FXML
@@ -67,11 +61,9 @@ public class Step5SummaryController {
     public void onConfirm(ActionEvent event) {
         try {
             if (characterDAO.existsByName(session.getName())) {
-                Alert warning = new Alert(Alert.AlertType.WARNING);
-                warning.setTitle("Nombre duplicado");
-                warning.setHeaderText(null);
-                warning.setContentText("Ya existe un personaje guardado con el nombre \"" + session.getName() + "\". Usa otro nombre.");
-                warning.showAndWait();
+                DialogUtils.warning(
+                        "Nombre duplicado",
+                        "Ya existe un personaje guardado con el nombre \"" + session.getName() + "\". Usa otro nombre.");
                 return;
             }
 
@@ -90,21 +82,13 @@ public class Step5SummaryController {
             Character character = builder.build();
             characterDAO.save(character);
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Personaje creado");
-            alert.setHeaderText(null);
-            alert.setContentText("Se guardó correctamente: " + character.getName());
-            alert.showAndWait();
+            DialogUtils.info("Personaje creado", "Se guardó correctamente: " + character.getName());
 
             GalleryController gallery = new GalleryController();
             SceneNavigator.goTo(event, "/fxml/gallery.fxml", gallery);
 
         } catch (IllegalStateException e) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Faltan datos");
-            alert.setHeaderText(null);
-            alert.setContentText(e.getMessage());
-            alert.showAndWait();
+            DialogUtils.warning("Faltan datos", e.getMessage());
         }
     }
 }
