@@ -18,6 +18,7 @@
 
     <HBox spacing="10" alignment="CENTER_LEFT">
         <Button text="Ver detalle" onAction="#onViewDetail"/>
+        <Button text="Jugar" onAction="#onPlay"/>
         <Button text="Eliminar" onAction="#onDelete"/>
         <Button text="Refrescar" onAction="#onRefresh"/>
     </HBox>

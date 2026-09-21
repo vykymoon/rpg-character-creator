@@ -8,7 +8,6 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.AudioClip;
@@ -57,7 +56,7 @@ public class CharacterDetailController {
         raceLabel.setText(character.getRace() != null ? character.getRace().getName() : "-");
         classLabel.setText(character.getCharacterClass() != null ? character.getCharacterClass().getName() : "-");
 
-        avatarImage.setImage(resolveAvatar());
+        avatarImage.setImage(RaceAvatarLoader.load(character.getRace()));
         playOpenSound();
 
         setStat(strBar, strValue, character.getStrength());
@@ -70,30 +69,6 @@ public class CharacterDetailController {
 
         fillChips(outfitsBox, character.getOutfits(), "Sin vestuario", outfit ->
                 outfit.getName() + "  ·  " + outfit.getSlot(), "outfit-chip");
-    }
-
-    /**
-     * Busca un sprite de avatar según el nombre de la raza en
-     * /sprites/avatars/<raza_normalizada>.png. Si no existe, cae a
-     * /sprites/avatars/default.png. Si tampoco existe ese, no revienta
-     * la app, solo deja el ImageView vacío.
-     */
-    private Image resolveAvatar() {
-        String raceName = character.getRace() != null ? character.getRace().getName() : "default";
-        String path = "/sprites/avatars/" + normalize(raceName) + ".jpg";
-
-        var stream = getClass().getResourceAsStream(path);
-        if (stream == null) {
-            stream = getClass().getResourceAsStream("/sprites/avatars/default.png");
-        }
-        return stream != null ? new Image(stream) : null;
-    }
-
-    private String normalize(String name) {
-        return name.toLowerCase()
-                .replace("á", "a").replace("é", "e").replace("í", "i")
-                .replace("ó", "o").replace("ú", "u")
-                .replace(" ", "_");
     }
 
     /**

@@ -7,12 +7,16 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -21,12 +25,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Pantalla de galería: lista los personajes guardados usando
- * CharacterDAO.findAll(), permite ver detalle, eliminar, crear uno
- * nuevo desde cero (wizard) o clonar una plantilla (Prototype).
- * Es la pantalla inicial de la app (MainApp arranca aquí).
- */
 public class GalleryController {
 
     @FXML
@@ -39,20 +37,37 @@ public class GalleryController {
         refreshList();
 
         characterListView.setCellFactory(list -> new ListCell<>() {
+            private final ImageView avatar = new ImageView();
+            private final Label label = new Label();
+            private final HBox row = new HBox(10, avatar, label);
+
+            {
+                avatar.setFitWidth(36);
+                avatar.setFitHeight(36);
+                avatar.setPreserveRatio(true);
+                avatar.setSmooth(false);
+                row.setAlignment(Pos.CENTER_LEFT);
+            }
+
             @Override
             protected void updateItem(Character character, boolean empty) {
                 super.updateItem(character, empty);
                 if (empty || character == null) {
-                    setText(null);
+                    setGraphic(null);
                     getStyleClass().remove("character-cell");
-                } else {
-                    String raceName = character.getRace() != null ? character.getRace().getName() : "-";
-                    String className = character.getCharacterClass() != null ? character.getCharacterClass().getName() : "-";
-                    setText(character.getName() + "   —   " + raceName + " / " + className);
-                    if (!getStyleClass().contains("character-cell")) {
-                        getStyleClass().add("character-cell");
-                    }
+                    return;
                 }
+
+                String raceName = character.getRace() != null ? character.getRace().getName() : "-";
+                String className = character.getCharacterClass() != null ? character.getCharacterClass().getName() : "-";
+
+                avatar.setImage(RaceAvatarLoader.load(character.getRace()));
+                label.setText(character.getName() + "   —   " + raceName + " / " + className);
+
+                if (!getStyleClass().contains("character-cell")) {
+                    getStyleClass().add("character-cell");
+                }
+                setGraphic(row);
             }
         });
     }
@@ -85,6 +100,16 @@ public class GalleryController {
         openDetailWindow(selected, event);
     }
 
+    @FXML
+    public void onPlay(ActionEvent event) {
+        Character selected = characterListView.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            DialogUtils.info("Aviso", "Selecciona un personaje de la lista primero.");
+            return;
+        }
+        SceneNavigator.goTo(event, "/fxml/play.fxml", new PlayController(selected));
+    }
+
     private void openDetailWindow(Character character, ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/character_detail.fxml"));
@@ -92,7 +117,7 @@ public class GalleryController {
             Parent root = loader.load();
 
             Stage detailStage = new Stage();
-            detailStage.initStyle(StageStyle.UNDECORATED); // look "in-game", sin barra nativa del SO
+            detailStage.initStyle(StageStyle.UNDECORATED);
             detailStage.initModality(Modality.APPLICATION_MODAL);
             detailStage.initOwner(((Node) event.getSource()).getScene().getWindow());
             detailStage.setTitle("Detalle de " + character.getName());
