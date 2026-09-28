@@ -50,6 +50,7 @@ public class GameApp extends Application {
     private GameClient client;
     private String playerId;
     private Canvas canvas;
+    private javafx.scene.image.Image mapImage;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -102,6 +103,36 @@ public class GameApp extends Application {
         stage.setResizable(false);
         stage.setOnCloseRequest(e -> { client.close(); Platform.exit(); });
         stage.show();
+
+        // --- CÓDIGO A PRUEBA DE BALAS ---
+        String[] posiblesRutas = {
+                "/map/background_multiplayer.jpg",
+                "/battle/map/background_multiplayer.jpg",
+                "/background_multiplayer.jpg"
+        };
+
+        for (String ruta : posiblesRutas) {
+            java.net.URL imageUrl = getClass().getResource(ruta);
+            if (imageUrl != null) {
+                mapImage = new javafx.scene.image.Image(imageUrl.toExternalForm());
+                System.out.println("¡ÉXITO! Imagen encontrada en el proyecto: " + ruta);
+                break;
+            }
+        }
+
+        // Plan de emergencia: Si no la encuentra en el proyecto, la jala de tus Descargas directo
+        if (mapImage == null) {
+            System.err.println("No se encontró en resources, forzando carga desde Descargas...");
+            java.io.File file = new java.io.File("C:\\Users\\AsusZenbook\\Downloads\\background_multiplayer.jpg");
+            if (file.exists()) {
+                mapImage = new javafx.scene.image.Image(file.toURI().toString());
+                System.out.println("¡ÉXITO! Imagen cargada desde tus Descargas.");
+            } else {
+                System.err.println("ERROR CRÍTICO: Tampoco existe en Descargas.");
+            }
+        }
+        // --------------------------------
+
         draw();
     }
 
@@ -242,17 +273,12 @@ public class GameApp extends Application {
 
     private void draw() {
         GraphicsContext g = canvas.getGraphicsContext2D();
-        g.setFill(Color.web("#1e2327"));
-        g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
-        String[] m = mapRows;
-        if (m != null) {
-            for (int y = 0; y < m.length; y++) {
-                for (int x = 0; x < m[y].length(); x++) {
-                    g.setFill(tileColor(m[y].charAt(x)));
-                    g.fillRect(x * CELL, y * CELL, CELL, CELL);
-                }
-            }
+        if (mapImage != null && !mapImage.isError()) {
+            g.drawImage(mapImage, 0, 0, canvas.getWidth(), canvas.getHeight());
+        } else {
+            g.setFill(Color.web("#1e2327"));
+            g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         }
 
         for (Map.Entry<String, PV> e : players.entrySet()) {
@@ -270,16 +296,6 @@ public class GameApp extends Application {
             g.setFill(Color.WHITE);
             g.fillText(p.name(), p.x() * CELL - 4, p.y() * CELL - 2);
         }
-    }
-
-    private Color tileColor(char c) {
-        return switch (c) {
-            case '=' -> Color.web("#8b7355");
-            case '#' -> Color.web("#555b61");
-            case 'T' -> Color.web("#1f4d2b");
-            case '~' -> Color.web("#2f5f9f");
-            default -> Color.web("#3b6e3b");
-        };
     }
 
     private String ask(String title, String header, String def) {

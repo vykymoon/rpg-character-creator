@@ -3,22 +3,28 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+<VBox spacing="14" alignment="TOP_LEFT" styleClass="screen"
+      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
     <padding>
         <Insets top="24" right="24" bottom="24" left="24"/>
     </padding>
 
-    <Label text="Paso 5 de 5 — Resumen" styleClass="step-caption"/>
-    <Label text="Confirma tu Personaje" styleClass="detail-name" wrapText="true" maxWidth="Infinity"/>
+    <Label text="PASO 5 DE 5 — RESUMEN" styleClass="step-caption"/>
+    <ProgressBar progress="1.0" maxWidth="Infinity" styleClass="step-progress"/>
+    <Label text="Confirma tu Personaje" styleClass="title" wrapText="true" maxWidth="Infinity"/>
 
-    <TextArea fx:id="summaryArea" editable="false" wrapText="true" prefHeight="220" styleClass="summary-box"/>
+    <TextArea fx:id="summaryArea" editable="false" wrapText="true" prefHeight="220"
+              VBox.vgrow="ALWAYS" styleClass="summary-box"/>
 
-    <HBox spacing="10" alignment="CENTER_RIGHT">
+    <HBox spacing="10" alignment="CENTER_LEFT">
         <Button text="← Atrás" onAction="#onBack"/>
-        <Button text="Crear Personaje ✓" onAction="#onConfirm"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Crear Personaje ✓" onAction="#onConfirm" styleClass="button-primary"/>
     </HBox>
 </VBox>

@@ -7,6 +7,8 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
 import javafx.scene.control.TextField;
 
 /**
@@ -19,6 +21,15 @@ public class Step1NameRaceController {
 
     @FXML
     private ComboBox<Race> raceCombo;
+
+    @FXML
+    private ImageView racePreview;
+
+    @FXML
+    private Label raceDescLabel;
+
+    @FXML
+    private Label raceStatsLabel;
 
     private final WizardSession session;
 
@@ -37,6 +48,24 @@ public class Step1NameRaceController {
         if (session.getRace() != null) {
             raceCombo.setValue(session.getRace());
         }
+
+        raceCombo.valueProperty().addListener((obs, old, race) -> updatePreview(race));
+        updatePreview(raceCombo.getValue());
+    }
+
+    /** Muestra la foto, la descripción y los atributos base de la raza elegida. */
+    private void updatePreview(Race race) {
+        racePreview.setImage(RaceAvatarLoader.load(race));
+        if (race == null) {
+            raceDescLabel.setText("Elige una raza para ver sus rasgos.");
+            raceStatsLabel.setText("");
+            return;
+        }
+        raceDescLabel.setText(race.getDescription());
+        raceStatsLabel.setText(String.format(
+                "FUE %d%nDES %d%nINT %d%nVIT %d",
+                race.getBaseStrength(), race.getBaseDexterity(),
+                race.getBaseIntelligence(), race.getBaseVitality()));
     }
 
     @FXML

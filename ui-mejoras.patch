@@ -1,0 +1,1175 @@
+git apply --check ui-mejoras.patchdiff --git a/src/main/java/com/proyecto/rpg/ui/GalleryController.java b/src/main/java/com/proyecto/rpg/ui/GalleryController.java
+index 249e8e9..096f342 100644
+--- a/src/main/java/com/proyecto/rpg/ui/GalleryController.java
++++ b/src/main/java/com/proyecto/rpg/ui/GalleryController.java
+@@ -17,6 +17,7 @@ import javafx.scene.control.ListCell;
+ import javafx.scene.control.ListView;
+ import javafx.scene.image.ImageView;
+ import javafx.scene.layout.HBox;
++import javafx.scene.layout.VBox;
+ import javafx.stage.Modality;
+ import javafx.stage.Stage;
+ import javafx.stage.StageStyle;
+@@ -36,14 +37,22 @@ public class GalleryController {
+     public void initialize() {
+         refreshList();
+ 
++        Label empty = new Label("Aún no tienes personajes.\n¡Crea el primero!");
++        characterListView.setPlaceholder(empty);
++
+         characterListView.setCellFactory(list -> new ListCell<>() {
+             private final ImageView avatar = new ImageView();
+-            private final Label label = new Label();
+-            private final HBox row = new HBox(10, avatar, label);
++            private final Label nameLabel = new Label();
++            private final Label subLabel = new Label();
++            private final VBox texts = new VBox(6, nameLabel, subLabel);
++            private final HBox row = new HBox(14, avatar, texts);
+ 
+             {
+-                avatar.setFitWidth(36);
+-                avatar.setFitHeight(36);
++                avatar.setFitWidth(48);
++                avatar.setFitHeight(48);
++                nameLabel.getStyleClass().add("cell-name");
++                subLabel.getStyleClass().add("cell-sub");
++                texts.setAlignment(Pos.CENTER_LEFT);
+                 avatar.setPreserveRatio(true);
+                 avatar.setSmooth(false);
+                 row.setAlignment(Pos.CENTER_LEFT);
+@@ -62,7 +71,8 @@ public class GalleryController {
+                 String className = character.getCharacterClass() != null ? character.getCharacterClass().getName() : "-";
+ 
+                 avatar.setImage(RaceAvatarLoader.load(character.getRace()));
+-                label.setText(character.getName() + "   —   " + raceName + " / " + className);
++                nameLabel.setText(character.getName());
++                subLabel.setText(raceName + "  ·  " + className);
+ 
+                 if (!getStyleClass().contains("character-cell")) {
+                     getStyleClass().add("character-cell");
+diff --git a/src/main/java/com/proyecto/rpg/ui/MainApp.java b/src/main/java/com/proyecto/rpg/ui/MainApp.java
+index 6b8665b..708f17a 100644
+--- a/src/main/java/com/proyecto/rpg/ui/MainApp.java
++++ b/src/main/java/com/proyecto/rpg/ui/MainApp.java
+@@ -20,10 +20,12 @@ public class MainApp extends Application {
+         loader.setController(new GalleryController());
+         Parent root = loader.load();
+ 
+-        Scene scene = new Scene(root, 480, 460);
++        Scene scene = new Scene(root, 760, 640);
+         scene.getStylesheets().add(getClass().getResource("/css/retro-theme.css").toExternalForm());
+ 
+         stage.setTitle("RPG Character Creator");
++        stage.setMinWidth(680);
++        stage.setMinHeight(600);
+         stage.setScene(scene);
+         stage.show();
+     }
+diff --git a/src/main/java/com/proyecto/rpg/ui/Step1NameRaceController.java b/src/main/java/com/proyecto/rpg/ui/Step1NameRaceController.java
+index afc3a8f..464a8f3 100644
+--- a/src/main/java/com/proyecto/rpg/ui/Step1NameRaceController.java
++++ b/src/main/java/com/proyecto/rpg/ui/Step1NameRaceController.java
+@@ -7,6 +7,8 @@ import javafx.event.ActionEvent;
+ import javafx.fxml.FXML;
+ import javafx.scene.control.Alert;
+ import javafx.scene.control.ComboBox;
++import javafx.scene.control.Label;
++import javafx.scene.image.ImageView;
+ import javafx.scene.control.TextField;
+ 
+ /**
+@@ -20,6 +22,15 @@ public class Step1NameRaceController {
+     @FXML
+     private ComboBox<Race> raceCombo;
+ 
++    @FXML
++    private ImageView racePreview;
++
++    @FXML
++    private Label raceDescLabel;
++
++    @FXML
++    private Label raceStatsLabel;
++
+     private final WizardSession session;
+ 
+     public Step1NameRaceController(WizardSession session) {
+@@ -37,6 +48,24 @@ public class Step1NameRaceController {
+         if (session.getRace() != null) {
+             raceCombo.setValue(session.getRace());
+         }
++
++        raceCombo.valueProperty().addListener((obs, old, race) -> updatePreview(race));
++        updatePreview(raceCombo.getValue());
++    }
++
++    /** Muestra la foto, la descripción y los atributos base de la raza elegida. */
++    private void updatePreview(Race race) {
++        racePreview.setImage(RaceAvatarLoader.load(race));
++        if (race == null) {
++            raceDescLabel.setText("Elige una raza para ver sus rasgos.");
++            raceStatsLabel.setText("");
++            return;
++        }
++        raceDescLabel.setText(race.getDescription());
++        raceStatsLabel.setText(String.format(
++                "FUE %d%nDES %d%nINT %d%nVIT %d",
++                race.getBaseStrength(), race.getBaseDexterity(),
++                race.getBaseIntelligence(), race.getBaseVitality()));
+     }
+ 
+     @FXML
+diff --git a/src/main/java/com/proyecto/rpg/ui/Step2ClassController.java b/src/main/java/com/proyecto/rpg/ui/Step2ClassController.java
+index 9809f76..dd18e11 100644
+--- a/src/main/java/com/proyecto/rpg/ui/Step2ClassController.java
++++ b/src/main/java/com/proyecto/rpg/ui/Step2ClassController.java
+@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
+ import javafx.fxml.FXML;
+ import javafx.scene.control.Alert;
+ import javafx.scene.control.ComboBox;
++import javafx.scene.control.Label;
+ 
+ /**
+  * Paso 2 del wizard: clase de personaje (Guerrero, Mago, Pícaro).
+@@ -16,6 +17,12 @@ public class Step2ClassController {
+     @FXML
+     private ComboBox<CharacterClass> classCombo;
+ 
++    @FXML
++    private Label classDescLabel;
++
++    @FXML
++    private Label classBonusLabel;
++
+     private final WizardSession session;
+ 
+     public Step2ClassController(WizardSession session) {
+@@ -30,6 +37,23 @@ public class Step2ClassController {
+         if (session.getCharacterClass() != null) {
+             classCombo.setValue(session.getCharacterClass());
+         }
++
++        classCombo.valueProperty().addListener((obs, old, c) -> updatePreview(c));
++        updatePreview(classCombo.getValue());
++    }
++
++    /** Muestra la descripción y los bonos de atributos de la clase elegida. */
++    private void updatePreview(CharacterClass c) {
++        if (c == null) {
++            classDescLabel.setText("Elige una clase para ver qué aporta a tu personaje.");
++            classBonusLabel.setText("");
++            return;
++        }
++        classDescLabel.setText(c.getDescription());
++        classBonusLabel.setText(String.format(
++                "BONOS%n%nFUE +%d%nDES +%d%nINT +%d%nVIT +%d",
++                c.getBonusStrength(), c.getBonusDexterity(),
++                c.getBonusIntelligence(), c.getBonusVitality()));
+     }
+ 
+     @FXML
+diff --git a/src/main/resources/css/retro-theme.css b/src/main/resources/css/retro-theme.css
+index eba45f6..bc49e05 100644
+--- a/src/main/resources/css/retro-theme.css
++++ b/src/main/resources/css/retro-theme.css
+@@ -1,15 +1,15 @@
+ /*
+- * Tema visual: Pixel Art / Retro 16-bit
++ * Tema visual: Pixel Art / Retro 16-bit  (v2)
+  *
+- * Paleta inspirada en consolas retro: fondo azul-morado oscuro,
+- * acentos dorados/amarillos y morado eléctrico, bordes duros
+- * (sin esquinas redondeadas, sin sombras suaves) para que se
+- * sienta "de juego" en vez de UI de escritorio genérica.
++ * Paleta unificada (antes había dos paletas mezcladas):
++ *   fondo      #10121c -> #1b1e38 (degradado)
++ *   panel      #171a2e   borde #3b4070
++ *   dorado     #ffe066   (acento principal / selección)
++ *   morado     #7c1fa2   (sombra "pixel", pressed)
++ *   texto      #e8e8e8   apagado #9a9ab0
+  *
+- * Fuente pixel: "Press Start 2P" (Google Fonts, gratuita).
+- * Si el archivo .ttf no está presente en resources/fonts/, JavaFX
+- * simplemente cae a "monospace" — la app sigue funcionando igual,
+- * solo se ve un poco menos "pixelada" hasta que agregues la fuente.
++ * Nota: "Press Start 2P" es una fuente de un solo peso. NO usar
++ * -fx-font-weight: bold (JavaFX la "engorda" y se ve borrosa).
+  */
+ 
+ @font-face {
+@@ -17,18 +17,102 @@
+     src: url("../fonts/PressStart2P-Regular.ttf");
+ }
+ 
++/* ===== Base ===== */
++
+ .root {
+-    -fx-background-color: #10121c;
++    -fx-background-color: linear-gradient(to bottom, #1b1e38, #10121c);
+     -fx-font-family: "Press Start 2P", monospace;
++    -fx-control-inner-background: #10121c;
++    -fx-accent: #ffe066;
++    -fx-focus-color: #ffe066;
++    -fx-faint-focus-color: transparent;
+ }
+ 
+-/* ===== Texto ===== */
+-
+ .label {
+     -fx-text-fill: #e8e8e8;
+     -fx-font-size: 10px;
+ }
+ 
++.screen {
++    -fx-background-color: transparent;
++}
++
++/* ===== Títulos ===== */
++
++.title {
++    -fx-font-size: 18px;
++    -fx-text-fill: #ffe066;
++    -fx-effect: dropshadow(gaussian, #7c1fa2, 0, 0, 3, 3);
++}
++
++.subtitle {
++    -fx-font-size: 9px;
++    -fx-text-fill: #9a9ab0;
++    -fx-line-spacing: 4px;
++}
++
++.step-caption {
++    -fx-font-size: 8px;
++    -fx-text-fill: #9a9ab0;
++}
++
++.field-label {
++    -fx-font-size: 9px;
++    -fx-text-fill: #ffe066;
++}
++
++.hint {
++    -fx-font-size: 8px;
++    -fx-text-fill: #9a9ab0;
++    -fx-line-spacing: 3px;
++}
++
++/* ===== Tarjetas (paneles) ===== */
++
++.card {
++    -fx-background-color: #171a2e;
++    -fx-border-color: #3b4070;
++    -fx-border-width: 2px;
++    -fx-padding: 16px;
++    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 0, 0, 4, 4);
++}
++
++.card-title {
++    -fx-font-size: 11px;
++    -fx-text-fill: #7fd1ae;
++}
++
++.card-text {
++    -fx-font-size: 9px;
++    -fx-text-fill: #e8e8e8;
++    -fx-line-spacing: 4px;
++}
++
++.preview-avatar {
++    -fx-effect: dropshadow(gaussian, rgba(255,224,102,0.55), 14, 0.15, 0, 0);
++}
++
++/* ===== Barra de progreso del wizard ===== */
++
++.step-progress {
++    -fx-pref-height: 12px;
++}
++
++.step-progress > .track {
++    -fx-background-color: #0b0c14;
++    -fx-background-radius: 0;
++    -fx-background-insets: 0;
++    -fx-border-color: #3b4070;
++    -fx-border-width: 2px;
++}
++
++.step-progress > .bar {
++    -fx-background-color: linear-gradient(to bottom, #ffe066, #e0a92e);
++    -fx-background-radius: 0;
++    -fx-background-insets: 2;
++    -fx-padding: 3px;
++}
++
+ /* ===== Botones ===== */
+ 
+ .button {
+@@ -41,6 +125,7 @@
+     -fx-border-width: 2px;
+     -fx-padding: 10 16 10 16;
+     -fx-cursor: hand;
++    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 0, 0, 3, 3);
+ }
+ 
+ .button:hover {
+@@ -52,32 +137,111 @@
+ .button:pressed {
+     -fx-background-color: #7c1fa2;
+     -fx-text-fill: #ffffff;
++    -fx-translate-x: 2px;
+     -fx-translate-y: 2px;
++    -fx-effect: null;
+ }
+ 
+-/* ===== Campos de texto, combos ===== */
++.button:focused {
++    -fx-border-color: #ffffff;
++}
++
++/* Botón principal (acción destacada) */
++.button-primary {
++    -fx-background-color: linear-gradient(to bottom, #ffe066, #e0a92e);
++    -fx-text-fill: #10121c;
++    -fx-border-color: #fff6c2;
++}
++
++.button-primary:hover {
++    -fx-background-color: #ffffff;
++    -fx-text-fill: #10121c;
++    -fx-border-color: #ffe066;
++}
++
++.button-primary:pressed,
++.button-danger:pressed {
++    -fx-background-color: #7c1fa2;
++    -fx-text-fill: #ffffff;
++    -fx-border-color: #ffe066;
++}
++
++/* Botón peligroso (eliminar) */
++.button-danger {
++    -fx-background-color: #3a1a24;
++    -fx-text-fill: #ff8a8a;
++    -fx-border-color: #d9534f;
++}
++
++.button-danger:hover {
++    -fx-background-color: #d9534f;
++    -fx-text-fill: #ffffff;
++    -fx-border-color: #ffffff;
++}
++
++/* ===== Campos de texto y combos ===== */
+ 
+ .text-field,
+-.combo-box,
+-.combo-box .list-cell,
+ .text-area {
+-    -fx-background-color: #1c1f33;
++    -fx-background-color: #10121c;
+     -fx-text-fill: #e8e8e8;
+-    -fx-font-size: 9px;
++    -fx-prompt-text-fill: #5f6384;
++    -fx-font-size: 10px;
+     -fx-background-radius: 0;
+     -fx-border-radius: 0;
+     -fx-border-color: #4a4e69;
+     -fx-border-width: 2px;
++    -fx-padding: 8px;
+     -fx-highlight-fill: #ffe066;
+     -fx-highlight-text-fill: #10121c;
+ }
+ 
++.text-field:focused,
++.text-area:focused {
++    -fx-border-color: #ffe066;
++    -fx-effect: dropshadow(gaussian, rgba(255,224,102,0.35), 8, 0.2, 0, 0);
++}
++
++.text-area .content,
++.text-area .scroll-pane {
++    -fx-background-color: #10121c;
++}
++
++.text-area .text {
++    -fx-fill: #e8e8e8;
++}
++
++.combo-box {
++    -fx-background-color: #10121c;
++    -fx-background-radius: 0;
++    -fx-border-radius: 0;
++    -fx-border-color: #4a4e69;
++    -fx-border-width: 2px;
++    -fx-padding: 2px;
++}
++
++.combo-box:hover,
++.combo-box:focused {
++    -fx-border-color: #ffe066;
++}
++
++.combo-box .list-cell {
++    -fx-background-color: transparent;
++    -fx-text-fill: #e8e8e8;
++    -fx-font-size: 10px;
++}
++
+ .combo-box .arrow-button {
+     -fx-background-color: #2b2f4a;
++    -fx-background-radius: 0;
++}
++
++.combo-box .arrow-button .arrow {
++    -fx-background-color: #ffe066;
+ }
+ 
+ .combo-box-popup .list-view {
+-    -fx-background-color: #1c1f33;
++    -fx-background-color: #10121c;
+     -fx-border-color: #ffe066;
+     -fx-border-width: 2px;
+ }
+@@ -85,19 +249,36 @@
+ /* ===== Listas ===== */
+ 
+ .list-view {
+-    -fx-background-color: #1c1f33;
+-    -fx-border-color: #4a4e69;
++    -fx-background-color: #10121c;
++    -fx-border-color: #3b4070;
+     -fx-border-width: 2px;
+     -fx-background-radius: 0;
++    -fx-background-insets: 0;
++    -fx-padding: 0;
++}
++
++.list-view:focused {
++    -fx-border-color: #ffe066;
++}
++
++.list-view .placeholder .label {
++    -fx-text-fill: #5f6384;
++    -fx-font-size: 9px;
++    -fx-line-spacing: 6px;
++    -fx-text-alignment: center;
+ }
+ 
+ .list-cell {
+-    -fx-background-color: #1c1f33;
++    -fx-background-color: #10121c;
+     -fx-text-fill: #e8e8e8;
+-    -fx-font-size: 9px;
++    -fx-font-size: 10px;
+     -fx-padding: 8px;
+ }
+ 
++.list-cell:odd {
++    -fx-background-color: #13152a;
++}
++
+ .list-cell:filled:hover {
+     -fx-background-color: #2b2f4a;
+ }
+@@ -107,46 +288,55 @@
+     -fx-text-fill: #10121c;
+ }
+ 
+-/* ===== Diálogos / Alertas =====
+-   Nota: los Alert de JavaFX abren su propia ventana y no heredan
+-   este CSS automáticamente. Ver UiUtils.showAlert() para aplicarlo. */
++/* ===== Filas de la galería ===== */
+ 
+-.dialog-pane {
+-    -fx-background-color: #10121c;
+-    -fx-font-family: "Press Start 2P", monospace;
++.character-cell {
++    -fx-padding: 10px 12px 10px 12px;
++    -fx-border-color: transparent transparent #2b2f4a transparent;
++    -fx-border-width: 0 0 2 0;
+ }
+ 
+-.dialog-pane .content.label {
+-    -fx-text-fill: #e8e8e8;
+-    -fx-font-size: 9px;
++.cell-name {
++    -fx-font-size: 11px;
++    -fx-text-fill: #ffe066;
+ }
+ 
+-.dialog-pane .header-panel {
+-    -fx-background-color: #2b2f4a;
++.cell-sub {
++    -fx-font-size: 8px;
++    -fx-text-fill: #9a9ab0;
+ }
+ 
+-.dialog-pane .header-panel .label {
+-    -fx-text-fill: #ffe066;
++.character-cell:filled:selected .cell-name,
++.character-cell:filled:selected .cell-sub {
++    -fx-text-fill: #10121c;
++}
++
++/* ===== Filas de vestuario (Paso 4) ===== */
++
++.outfit-name {
+     -fx-font-size: 10px;
++    -fx-text-fill: #e8e8e8;
+ }
+ 
+-.dialog-pane .button-bar .button {
+-    -fx-background-color: #2b2f4a;
+-    -fx-text-fill: #ffe066;
+-    -fx-border-color: #ffe066;
+-    -fx-border-width: 2px;
+-    -fx-background-radius: 0;
++.outfit-slot {
++    -fx-font-size: 8px;
++    -fx-text-fill: #7fd1ae;
+ }
+ 
+-.dialog-pane .button-bar .button:hover {
+-    -fx-background-color: #ffe066;
++.list-cell:filled:selected .outfit-name,
++.list-cell:filled:selected .outfit-slot {
+     -fx-text-fill: #10121c;
+ }
+ 
+-/* ===== Scrollbars (que combinen con el tema) ===== */
++/* ===== Separadores y scrollbars ===== */
++
++.separator .line {
++    -fx-border-color: #3b4070;
++    -fx-border-width: 1 0 0 0;
++}
+ 
+ .scroll-bar {
+-    -fx-background-color: #1c1f33;
++    -fx-background-color: #10121c;
+ }
+ 
+ .scroll-bar .thumb {
+@@ -158,64 +348,108 @@
+     -fx-background-color: #ffe066;
+ }
+ 
+-/* ============================================================
+-   AGREGAR esto a tu retro-theme.css existente (no lo reemplaza).
+-   Ajusta los colores/hex a los que ya venías usando para que
+-   combine con el resto de la app. Los nombres de -fx-font-family
+-   están en placeholder: cámbialos por la fuente pixel que ya
+-   cargaste con el @font-face / Font.loadFont.
+-   ============================================================ */
++.scroll-bar .increment-button,
++.scroll-bar .decrement-button {
++    -fx-background-color: #10121c;
++    -fx-padding: 0;
++}
++
++.scroll-bar .increment-arrow,
++.scroll-bar .decrement-arrow {
++    -fx-shape: " ";
++    -fx-padding: 0;
++}
++
++/* ===== Diálogos / Alertas (DialogUtils) ===== */
++
++.dialog-pane,
++.retro-dialog {
++    -fx-background-color: #171a2e;
++    -fx-border-color: #ffe066;
++    -fx-border-width: 2px;
++    -fx-font-family: "Press Start 2P", monospace;
++}
++
++.dialog-pane .content.label,
++.retro-dialog .content.label {
++    -fx-text-fill: #e8e8e8;
++    -fx-font-size: 9px;
++    -fx-line-spacing: 4px;
++}
++
++.dialog-pane .header-panel,
++.retro-dialog .header-panel {
++    -fx-background-color: #2b2f4a;
++}
++
++.dialog-pane .header-panel .label,
++.retro-dialog .header-panel .label {
++    -fx-text-fill: #ffe066;
++    -fx-font-size: 10px;
++}
++
++.dialog-pane > .button-bar > .container {
++    -fx-background-color: #171a2e;
++}
++
++/* ===== Detalle de personaje ===== */
+ 
+-/* --- Ventana de detalle de personaje --- */
+ .detail-root {
+-    -fx-background-color: #1a1a2e;
+-    -fx-border-color: #e0a92e;
+-    -fx-border-width: 3;
++    -fx-background-color: linear-gradient(to bottom, #1b1e38, #10121c);
++    -fx-border-color: #ffe066;
++    -fx-border-width: 3px;
+ }
+ 
+ .detail-name {
+-    -fx-font-size: 22px;
+-    -fx-font-weight: bold;
+-    -fx-text-fill: #f4e9d8;
++    -fx-font-size: 18px;
++    -fx-text-fill: #ffe066;
++    -fx-effect: dropshadow(gaussian, #7c1fa2, 0, 0, 3, 3);
+ }
+ 
+-.tag-race, .tag-class {
+-    -fx-padding: 4 10 4 10;
+-    -fx-background-radius: 2;
+-    -fx-font-size: 11px;
+-    -fx-font-weight: bold;
+-    -fx-text-fill: #1a1a2e;
++.tag-race,
++.tag-class {
++    -fx-padding: 5 10 5 10;
++    -fx-font-size: 9px;
++    -fx-text-fill: #10121c;
+ }
+ 
+-.tag-race { -fx-background-color: #7fd1ae; }
+-.tag-class { -fx-background-color: #e0a92e; }
++.tag-race  { -fx-background-color: #7fd1ae; }
++.tag-class { -fx-background-color: #ffe066; }
++
++.avatar-frame {
++    -fx-effect: dropshadow(gaussian, rgba(255,224,102,0.55), 14, 0.15, 0, 0);
++}
+ 
+ .section-title {
+-    -fx-font-size: 12px;
+-    -fx-font-weight: bold;
+-    -fx-text-fill: #e0a92e;
++    -fx-font-size: 10px;
++    -fx-text-fill: #ffe066;
+     -fx-padding: 4 0 0 0;
+ }
+ 
+ .stat-label {
+-    -fx-text-fill: #f4e9d8;
+-    -fx-font-size: 12px;
++    -fx-text-fill: #e8e8e8;
++    -fx-font-size: 9px;
+ }
+ 
+ .stat-value {
+-    -fx-text-fill: #f4e9d8;
+-    -fx-font-size: 12px;
+-    -fx-font-weight: bold;
++    -fx-text-fill: #ffe066;
++    -fx-font-size: 10px;
+ }
+ 
+-.stat-bar > .bar {
++.stat-bar > .track {
++    -fx-background-color: #0b0c14;
+     -fx-background-radius: 0;
+-    -fx-padding: 6px;
++    -fx-background-insets: 0;
++    -fx-border-color: #3b4070;
++    -fx-border-width: 2px;
+ }
+-.stat-bar > .track {
++
++.stat-bar > .bar {
+     -fx-background-radius: 0;
+-    -fx-background-color: #0f0f1c;
++    -fx-background-insets: 2;
++    -fx-padding: 5px;
+ }
++
+ .stat-bar-str > .bar { -fx-background-color: #d9534f; }
+ .stat-bar-dex > .bar { -fx-background-color: #7fd1ae; }
+ .stat-bar-int > .bar { -fx-background-color: #5bc0de; }
+@@ -223,77 +457,58 @@
+ 
+ .chip-list { -fx-padding: 0 0 6 0; }
+ 
+-.skill-chip, .outfit-chip {
+-    -fx-background-color: #262640;
+-    -fx-text-fill: #f4e9d8;
++.skill-chip,
++.outfit-chip {
++    -fx-background-color: #262a4a;
++    -fx-border-color: #3b4070;
++    -fx-border-width: 2px;
++    -fx-text-fill: #e8e8e8;
+     -fx-padding: 6 10 6 10;
+-    -fx-background-radius: 2;
+-    -fx-font-size: 12px;
++    -fx-font-size: 9px;
+ }
+ 
+ .empty-chip {
+-    -fx-text-fill: #7a7a8c;
+-    -fx-font-style: italic;
+-    -fx-font-size: 12px;
++    -fx-text-fill: #5f6384;
++    -fx-font-size: 9px;
+ }
+ 
+ .close-button {
+-    -fx-background-color: #e0a92e;
+-    -fx-text-fill: #1a1a2e;
+-    -fx-font-weight: bold;
++    -fx-background-color: linear-gradient(to bottom, #ffe066, #e0a92e);
++    -fx-text-fill: #10121c;
++    -fx-border-color: #fff6c2;
+     -fx-padding: 8 22 8 22;
+-    -fx-background-radius: 2;
+-    -fx-cursor: hand;
+ }
+-.close-button:hover { -fx-background-color: #f4c04c; }
+ 
+-/* --- Alerts (DialogUtils) --- */
+-.retro-dialog {
+-    -fx-background-color: #1a1a2e;
+-    -fx-border-color: #e0a92e;
+-    -fx-border-width: 2;
++.close-button:hover {
++    -fx-background-color: #ffffff;
+ }
+-.retro-dialog .content.label,
+-.retro-dialog .header-panel .label {
+-    -fx-text-fill: #f4e9d8;
+-}
+-.retro-dialog .header-panel {
+-    -fx-background-color: #262640;
+-}
+-.retro-dialog .button-bar .button {
+-    -fx-background-color: #e0a92e;
+-    -fx-text-fill: #1a1a2e;
+-    -fx-font-weight: bold;
+-    -fx-background-radius: 2;
+-    -fx-cursor: hand;
++
++/* ===== Resumen (Paso 5) ===== */
++
++.summary-box {
++    -fx-text-fill: #e8e8e8;
++    -fx-highlight-fill: #ffe066;
++    -fx-highlight-text-fill: #10121c;
++    -fx-font-size: 10px;
+ }
+-.retro-dialog .button-bar .button:hover { -fx-background-color: #f4c04c; }
+ 
+-/* --- Filas de la galería (character-cell), opcional --- */
+-.character-cell {
+-    -fx-background-color: #1a1a2e;
+-    -fx-text-fill: #f4e9d8;
+-    -fx-padding: 8 10 8 10;
+-    -fx-font-size: 13px;
++/* ===== Pantalla de combate ===== */
++
++.battle-root {
++    -fx-background-color: radial-gradient(center 50% 40%, radius 80%, #3a2418, #120b08);
+ }
+-.character-cell:selected {
+-    -fx-background-color: #e0a92e;
+-    -fx-text-fill: #1a1a2e;
++
++.battle-title {
++    -fx-font-size: 18px;
++    -fx-text-fill: #ff8a8a;
++    -fx-effect: dropshadow(gaussian, #000000, 0, 0, 3, 3);
+ }
+ 
+-.step-caption {
++.battle-enemy {
+     -fx-font-size: 12px;
+-    -fx-text-fill: #9a9ab0;
++    -fx-text-fill: #e8d5a0;
+ }
+ 
+-.summary-box .content {
+-    -fx-background-color: #0f0f1c;
+-}
+-.summary-box .text {
+-    -fx-fill: #f4e9d8;
++.battle-enemy-image {
++    -fx-effect: dropshadow(gaussian, rgba(217,83,79,0.6), 20, 0.2, 0, 0);
+ }
+-.summary-box {
+-    -fx-text-fill: #f4e9d8;
+-    -fx-highlight-fill: #e0a92e;
+-    -fx-highlight-text-fill: #1a1a2e;
+-}
+\ No newline at end of file
+diff --git a/src/main/resources/fxml/battle.fxml b/src/main/resources/fxml/battle.fxml
+index be501f6..675a8ee 100644
+--- a/src/main/resources/fxml/battle.fxml
++++ b/src/main/resources/fxml/battle.fxml
+@@ -4,20 +4,23 @@
+ <?import javafx.scene.control.Button?>
+ <?import javafx.scene.control.Label?>
+ <?import javafx.scene.image.ImageView?>
++<?import javafx.scene.layout.HBox?>
+ <?import javafx.scene.layout.VBox?>
+ 
+-<VBox spacing="12" alignment="CENTER" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+-      style="-fx-background-color: #1a1410;">
++<VBox spacing="16" alignment="CENTER" styleClass="battle-root"
++      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+     <padding>
+         <Insets top="24" right="40" bottom="24" left="40"/>
+     </padding>
+ 
+-    <Label text="¡Un enemigo apareció!"
+-           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #e8d5a0;"/>
++    <Label text="¡Un enemigo apareció!" styleClass="battle-title"/>
+ 
+-    <ImageView fx:id="enemyImage" fitHeight="180" preserveRatio="true" smooth="false"/>
+-    <Label fx:id="enemyLabel" style="-fx-font-size: 18px; -fx-text-fill: #b3a781;"/>
++    <ImageView fx:id="enemyImage" fitHeight="180" preserveRatio="true" smooth="false"
++               styleClass="battle-enemy-image"/>
++    <Label fx:id="enemyLabel" styleClass="battle-enemy"/>
+ 
+-    <Button text="Combatir" onAction="#onFight"/>
+-    <Button text="Huir" onAction="#onFlee"/>
+-</VBox>
+\ No newline at end of file
++    <HBox spacing="14" alignment="CENTER">
++        <Button text="Combatir" onAction="#onFight" styleClass="button-primary"/>
++        <Button text="Huir" onAction="#onFlee" styleClass="button-danger"/>
++    </HBox>
++</VBox>
+diff --git a/src/main/resources/fxml/gallery.fxml b/src/main/resources/fxml/gallery.fxml
+index a823777..4f98afd 100644
+--- a/src/main/resources/fxml/gallery.fxml
++++ b/src/main/resources/fxml/gallery.fxml
+@@ -4,28 +4,36 @@
+ <?import javafx.scene.control.Button?>
+ <?import javafx.scene.control.Label?>
+ <?import javafx.scene.control.ListView?>
++<?import javafx.scene.control.Separator?>
+ <?import javafx.scene.layout.HBox?>
++<?import javafx.scene.layout.Region?>
+ <?import javafx.scene.layout.VBox?>
+ 
+-<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
++<VBox spacing="14" alignment="TOP_LEFT" styleClass="screen"
++      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+     <padding>
+         <Insets top="24" right="24" bottom="24" left="24"/>
+     </padding>
+ 
+-    <Label text="Mis Personajes" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
++    <Label text="Mis Personajes" styleClass="title"/>
++    <Label text="Elige a tu héroe para jugar o crea uno nuevo." styleClass="subtitle"/>
+ 
+     <ListView fx:id="characterListView" VBox.vgrow="ALWAYS" prefHeight="260"/>
+ 
+     <HBox spacing="10" alignment="CENTER_LEFT">
++        <Button text="Jugar ▶" onAction="#onPlay" styleClass="button-primary"/>
+         <Button text="Ver detalle" onAction="#onViewDetail"/>
+-        <Button text="Jugar" onAction="#onPlay"/>
+-        <Button text="Eliminar" onAction="#onDelete"/>
++        <Region HBox.hgrow="ALWAYS"/>
++        <Button text="Eliminar" onAction="#onDelete" styleClass="button-danger"/>
+         <Button text="Refrescar" onAction="#onRefresh"/>
+     </HBox>
+ 
+-    <HBox spacing="10" alignment="CENTER_RIGHT">
++    <Separator/>
++
++    <HBox spacing="10" alignment="CENTER_LEFT">
+         <Button text="Clonar plantilla" onAction="#onCloneTemplate"/>
+-        <Button text="+ Crear nuevo personaje" onAction="#onCreateNew"/>
++        <Region HBox.hgrow="ALWAYS"/>
++        <Button text="+ Crear nuevo personaje" onAction="#onCreateNew" styleClass="button-primary"/>
+     </HBox>
+ 
+-</VBox>
+\ No newline at end of file
++</VBox>
+diff --git a/src/main/resources/fxml/step1_name_race.fxml b/src/main/resources/fxml/step1_name_race.fxml
+index 626ed89..d905601 100644
+--- a/src/main/resources/fxml/step1_name_race.fxml
++++ b/src/main/resources/fxml/step1_name_race.fxml
+@@ -4,28 +4,50 @@
+ <?import javafx.scene.control.Button?>
+ <?import javafx.scene.control.ComboBox?>
+ <?import javafx.scene.control.Label?>
++<?import javafx.scene.control.ProgressBar?>
+ <?import javafx.scene.control.TextField?>
++<?import javafx.scene.image.ImageView?>
+ <?import javafx.scene.layout.HBox?>
+-<?import javafx.scene.layout.VBox?>
+ <?import javafx.scene.layout.Region?>
++<?import javafx.scene.layout.VBox?>
+ 
+-<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
++<VBox spacing="14" alignment="TOP_LEFT" styleClass="screen"
++      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+     <padding>
+         <Insets top="24" right="24" bottom="24" left="24"/>
+     </padding>
+ 
+-    <Label text="Paso 1 de 5 — Nombre y Raza" style="-fx-font-size: 12px; -fx-text-fill: gray;"/>
+-    <Label text="Crea tu Personaje" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
++    <Label text="PASO 1 DE 5 — NOMBRE Y RAZA" styleClass="step-caption"/>
++    <ProgressBar progress="0.2" maxWidth="Infinity" styleClass="step-progress"/>
++    <Label text="Crea tu Personaje" styleClass="title"/>
++
++    <HBox spacing="16" VBox.vgrow="ALWAYS">
++        <!-- Formulario -->
++        <VBox spacing="10" styleClass="card" HBox.hgrow="ALWAYS" minWidth="260">
++            <Label text="NOMBRE DEL PERSONAJE" styleClass="field-label"/>
++            <TextField fx:id="nameField" promptText="Ej: Aldric"/>
+ 
+-    <Label text="Nombre del personaje:"/>
+-    <TextField fx:id="nameField" promptText="Ej: Aldric"/>
++            <Label text="RAZA" styleClass="field-label"/>
++            <ComboBox fx:id="raceCombo" maxWidth="Infinity" promptText="Elige una raza"/>
+ 
+-    <Label text="Raza:"/>
+-    <ComboBox fx:id="raceCombo" maxWidth="Infinity" promptText="Elige una raza"/>
++            <Label text="Cada raza cambia tus atributos base. Mira la vista previa a la derecha."
++                   styleClass="hint" wrapText="true"/>
++        </VBox>
++
++        <!-- Vista previa de la raza elegida -->
++        <VBox spacing="10" alignment="TOP_CENTER" styleClass="card" prefWidth="230" minWidth="230">
++            <Label text="VISTA PREVIA" styleClass="card-title"/>
++            <ImageView fx:id="racePreview" fitWidth="130" fitHeight="130" preserveRatio="true"
++                       styleClass="preview-avatar"/>
++            <Label fx:id="raceDescLabel" styleClass="card-text" wrapText="true"
++                   text="Elige una raza para ver sus rasgos."/>
++            <Label fx:id="raceStatsLabel" styleClass="card-text"/>
++        </VBox>
++    </HBox>
+ 
+     <HBox alignment="CENTER_LEFT" spacing="10">
+         <Button text="← Menú principal" onAction="#onBackToMenu"/>
+-        <javafx.scene.layout.Region HBox.hgrow="ALWAYS"/>
+-        <Button text="Siguiente →" onAction="#onNext"/>
++        <Region HBox.hgrow="ALWAYS"/>
++        <Button text="Siguiente →" onAction="#onNext" styleClass="button-primary"/>
+     </HBox>
+-</VBox>
+\ No newline at end of file
++</VBox>
+diff --git a/src/main/resources/fxml/step2_class.fxml b/src/main/resources/fxml/step2_class.fxml
+index 8b44630..622b0a8 100644
+--- a/src/main/resources/fxml/step2_class.fxml
++++ b/src/main/resources/fxml/step2_class.fxml
+@@ -4,22 +4,33 @@
+ <?import javafx.scene.control.Button?>
+ <?import javafx.scene.control.ComboBox?>
+ <?import javafx.scene.control.Label?>
++<?import javafx.scene.control.ProgressBar?>
+ <?import javafx.scene.layout.HBox?>
++<?import javafx.scene.layout.Region?>
+ <?import javafx.scene.layout.VBox?>
+ 
+-<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
++<VBox spacing="14" alignment="TOP_LEFT" styleClass="screen"
++      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+     <padding>
+         <Insets top="24" right="24" bottom="24" left="24"/>
+     </padding>
+ 
+-    <Label text="Paso 2 de 5 — Clase" style="-fx-font-size: 12px; -fx-text-fill: gray;"/>
+-    <Label text="Elige tu Clase" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
++    <Label text="PASO 2 DE 5 — CLASE" styleClass="step-caption"/>
++    <ProgressBar progress="0.4" maxWidth="Infinity" styleClass="step-progress"/>
++    <Label text="Elige tu Clase" styleClass="title"/>
+ 
+-    <Label text="Clase:"/>
+-    <ComboBox fx:id="classCombo" maxWidth="Infinity" promptText="Elige una clase"/>
++    <VBox spacing="10" styleClass="card" VBox.vgrow="ALWAYS">
++        <Label text="CLASE" styleClass="field-label"/>
++        <ComboBox fx:id="classCombo" maxWidth="Infinity" promptText="Elige una clase"/>
+ 
+-    <HBox spacing="10" alignment="CENTER_RIGHT">
++        <Label fx:id="classDescLabel" styleClass="card-text" wrapText="true"
++               text="Elige una clase para ver qué aporta a tu personaje."/>
++        <Label fx:id="classBonusLabel" styleClass="card-text"/>
++    </VBox>
++
++    <HBox spacing="10" alignment="CENTER_LEFT">
+         <Button text="← Atrás" onAction="#onBack"/>
+-        <Button text="Siguiente →" onAction="#onNext"/>
++        <Region HBox.hgrow="ALWAYS"/>
++        <Button text="Siguiente →" onAction="#onNext" styleClass="button-primary"/>
+     </HBox>
+-</VBox>
+\ No newline at end of file
++</VBox>
+diff --git a/src/main/resources/fxml/step3_skills.fxml b/src/main/resources/fxml/step3_skills.fxml
+index 14242b5..a2461d5 100644
+--- a/src/main/resources/fxml/step3_skills.fxml
++++ b/src/main/resources/fxml/step3_skills.fxml
+@@ -4,22 +4,28 @@
+ <?import javafx.scene.control.Button?>
+ <?import javafx.scene.control.Label?>
+ <?import javafx.scene.control.ListView?>
++<?import javafx.scene.control.ProgressBar?>
+ <?import javafx.scene.layout.HBox?>
++<?import javafx.scene.layout.Region?>
+ <?import javafx.scene.layout.VBox?>
+ 
+-<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
++<VBox spacing="14" alignment="TOP_LEFT" styleClass="screen"
++      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+     <padding>
+         <Insets top="24" right="24" bottom="24" left="24"/>
+     </padding>
+ 
+-    <Label text="Paso 3 de 5 — Habilidades" style="-fx-font-size: 12px; -fx-text-fill: gray;"/>
+-    <Label text="Elige Habilidades" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+-    <Label fx:id="hintLabel" wrapText="true" text="Selección múltiple (opcional). Ctrl+click para elegir varias." style="-fx-font-size: 11px; -fx-text-fill: gray;"/>
++    <Label text="PASO 3 DE 5 — HABILIDADES" styleClass="step-caption"/>
++    <ProgressBar progress="0.6" maxWidth="Infinity" styleClass="step-progress"/>
++    <Label text="Elige Habilidades" styleClass="title"/>
++    <Label fx:id="hintLabel" wrapText="true" styleClass="hint"
++           text="Selección múltiple (opcional). Ctrl+click para elegir varias."/>
+ 
+     <ListView fx:id="skillsList" VBox.vgrow="ALWAYS" prefHeight="220"/>
+ 
+-    <HBox spacing="10" alignment="CENTER_RIGHT">
++    <HBox spacing="10" alignment="CENTER_LEFT">
+         <Button text="← Atrás" onAction="#onBack"/>
+-        <Button text="Siguiente →" onAction="#onNext"/>
++        <Region HBox.hgrow="ALWAYS"/>
++        <Button text="Siguiente →" onAction="#onNext" styleClass="button-primary"/>
+     </HBox>
+-</VBox>
+\ No newline at end of file
++</VBox>
+diff --git a/src/main/resources/fxml/step4_outfit.fxml b/src/main/resources/fxml/step4_outfit.fxml
+index 1086a2a..2b71f81 100644
+--- a/src/main/resources/fxml/step4_outfit.fxml
++++ b/src/main/resources/fxml/step4_outfit.fxml
+@@ -4,22 +4,28 @@
+ <?import javafx.scene.control.Button?>
+ <?import javafx.scene.control.Label?>
+ <?import javafx.scene.control.ListView?>
++<?import javafx.scene.control.ProgressBar?>
+ <?import javafx.scene.layout.HBox?>
++<?import javafx.scene.layout.Region?>
+ <?import javafx.scene.layout.VBox?>
+ 
+-<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
++<VBox spacing="14" alignment="TOP_LEFT" styleClass="screen"
++      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+     <padding>
+         <Insets top="24" right="24" bottom="24" left="24"/>
+     </padding>
+ 
+-    <Label text="Paso 4 de 5 — Vestuario" style="-fx-font-size: 12px; -fx-text-fill: gray;"/>
+-    <Label text="Elige Vestuario" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+-    <Label fx:id="hintLabel" wrapText="true" text="Selección múltiple (opcional). Ctrl+click para elegir varias." style="-fx-font-size: 11px; -fx-text-fill: gray;"/>
++    <Label text="PASO 4 DE 5 — VESTUARIO" styleClass="step-caption"/>
++    <ProgressBar progress="0.8" maxWidth="Infinity" styleClass="step-progress"/>
++    <Label text="Elige Vestuario" styleClass="title"/>
++    <Label fx:id="hintLabel" wrapText="true" styleClass="hint"
++           text="Selección múltiple (opcional). Ctrl+click para elegir varias."/>
+ 
+     <ListView fx:id="outfitsList" VBox.vgrow="ALWAYS" prefHeight="300"/>
+ 
+-    <HBox spacing="10" alignment="CENTER_RIGHT">
++    <HBox spacing="10" alignment="CENTER_LEFT">
+         <Button text="← Atrás" onAction="#onBack"/>
+-        <Button text="Siguiente →" onAction="#onNext"/>
++        <Region HBox.hgrow="ALWAYS"/>
++        <Button text="Siguiente →" onAction="#onNext" styleClass="button-primary"/>
+     </HBox>
+-</VBox>
+\ No newline at end of file
++</VBox>
+diff --git a/src/main/resources/fxml/step5_summary.fxml b/src/main/resources/fxml/step5_summary.fxml
+index deb2e62..d02acf5 100644
+--- a/src/main/resources/fxml/step5_summary.fxml
++++ b/src/main/resources/fxml/step5_summary.fxml
+@@ -3,22 +3,28 @@
+ <?import javafx.geometry.Insets?>
+ <?import javafx.scene.control.Button?>
+ <?import javafx.scene.control.Label?>
++<?import javafx.scene.control.ProgressBar?>
+ <?import javafx.scene.control.TextArea?>
+ <?import javafx.scene.layout.HBox?>
++<?import javafx.scene.layout.Region?>
+ <?import javafx.scene.layout.VBox?>
+ 
+-<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
++<VBox spacing="14" alignment="TOP_LEFT" styleClass="screen"
++      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+     <padding>
+         <Insets top="24" right="24" bottom="24" left="24"/>
+     </padding>
+ 
+-    <Label text="Paso 5 de 5 — Resumen" styleClass="step-caption"/>
+-    <Label text="Confirma tu Personaje" styleClass="detail-name" wrapText="true" maxWidth="Infinity"/>
++    <Label text="PASO 5 DE 5 — RESUMEN" styleClass="step-caption"/>
++    <ProgressBar progress="1.0" maxWidth="Infinity" styleClass="step-progress"/>
++    <Label text="Confirma tu Personaje" styleClass="title" wrapText="true" maxWidth="Infinity"/>
+ 
+-    <TextArea fx:id="summaryArea" editable="false" wrapText="true" prefHeight="220" styleClass="summary-box"/>
++    <TextArea fx:id="summaryArea" editable="false" wrapText="true" prefHeight="220"
++              VBox.vgrow="ALWAYS" styleClass="summary-box"/>
+ 
+-    <HBox spacing="10" alignment="CENTER_RIGHT">
++    <HBox spacing="10" alignment="CENTER_LEFT">
+         <Button text="← Atrás" onAction="#onBack"/>
+-        <Button text="Crear Personaje ✓" onAction="#onConfirm"/>
++        <Region HBox.hgrow="ALWAYS"/>
++        <Button text="Crear Personaje ✓" onAction="#onConfirm" styleClass="button-primary"/>
+     </HBox>
+-</VBox>
+\ No newline at end of file
++</VBox>
+diff --git a/src/main/resources/fxml/template_gallery.fxml b/src/main/resources/fxml/template_gallery.fxml
+index 6141ef5..c7aa1d0 100644
+--- a/src/main/resources/fxml/template_gallery.fxml
++++ b/src/main/resources/fxml/template_gallery.fxml
+@@ -6,24 +6,29 @@
+ <?import javafx.scene.control.ListView?>
+ <?import javafx.scene.control.TextField?>
+ <?import javafx.scene.layout.HBox?>
++<?import javafx.scene.layout.Region?>
+ <?import javafx.scene.layout.VBox?>
+ 
+-<VBox spacing="16" alignment="TOP_LEFT" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
++<VBox spacing="14" alignment="TOP_LEFT" styleClass="screen"
++      xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+     <padding>
+         <Insets top="24" right="24" bottom="24" left="24"/>
+     </padding>
+ 
+-    <Label text="Clonar Plantilla (Prototype)" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
++    <Label text="Clonar Plantilla" styleClass="title"/>
+     <Label text="Elige un NPC base y clónalo con un nombre nuevo, sin pasar por el wizard completo."
+-           style="-fx-font-size: 11px; -fx-text-fill: gray;" wrapText="true"/>
++           styleClass="subtitle" wrapText="true"/>
+ 
+     <ListView fx:id="templateListView" VBox.vgrow="ALWAYS" prefHeight="180"/>
+ 
+-    <Label text="Nombre del nuevo personaje:"/>
+-    <TextField fx:id="newNameField" promptText="Ej: Bandido #2"/>
++    <VBox spacing="8" styleClass="card">
++        <Label text="NOMBRE DEL NUEVO PERSONAJE" styleClass="field-label"/>
++        <TextField fx:id="newNameField" promptText="Ej: Bandido #2"/>
++    </VBox>
+ 
+-    <HBox spacing="10" alignment="CENTER_RIGHT">
++    <HBox spacing="10" alignment="CENTER_LEFT">
+         <Button text="← Volver a la galería" onAction="#onBack"/>
+-        <Button text="Clonar y guardar" onAction="#onCloneAndSave"/>
++        <Region HBox.hgrow="ALWAYS"/>
++        <Button text="Clonar y guardar" onAction="#onCloneAndSave" styleClass="button-primary"/>
+     </HBox>
+-</VBox>
+\ No newline at end of file
++</VBox>
