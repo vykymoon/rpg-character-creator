@@ -219,8 +219,3 @@ mvn clean javafx:run
 
 ---
 
-### Recordatorio de entregables (según enunciado oficial)
-- [x] Repositorio en GitHub con código y documentación
-- [ ] Este Wiki completo
-- [ ] Presentación creativa del problema
-- [ ] *(Opcional)* Video técnico explicando la solución (máx. 5 min) — `[confirmar con el profesor si otorga puntos adicionales]`
