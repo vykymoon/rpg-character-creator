@@ -42,6 +42,13 @@
             <version>2.11.0</version>
         </dependency>
 
+        <!-- Multijugador LAN: servidor/cliente WebSocket (ADR-001) -->
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.6</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -63,7 +70,9 @@
                 </configuration>
             </plugin>
 
-            <!-- Plugin para correr la app JavaFX con: mvn javafx:run -->
+            <!-- Plugin JavaFX:
+                 mvn javafx:run            -> wizard (MainApp)
+                 mvn compile javafx:run@game -> juego multijugador (GameApp) -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -71,6 +80,37 @@
                 <configuration>
                     <mainClass>${mainClass}</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>game</id>
+                        <configuration>
+                            <mainClass>com.proyecto.rpg.ui.GameApp</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Ejecutar servidor/cliente de red sin JavaFX:
+                 mvn compile exec:java@server
+                 mvn compile exec:java@client -Dexec.args="ws://localhost:8887 p1" -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>server</id>
+                        <configuration>
+                            <mainClass>com.proyecto.rpg.adapters.server.ServerMain</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>client</id>
+                        <configuration>
+                            <mainClass>com.proyecto.rpg.adapters.client.ClientMain</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

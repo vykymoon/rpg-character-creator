@@ -3,17 +3,20 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox spacing="20" alignment="CENTER" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+<VBox spacing="12" alignment="CENTER" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
       style="-fx-background-color: #1a1410;">
     <padding>
-        <Insets top="40" right="40" bottom="40" left="40"/>
+        <Insets top="24" right="40" bottom="24" left="40"/>
     </padding>
 
-    <Label text="¡Un enemigo salvaje apareció!"
+    <Label text="¡Un enemigo apareció!"
            style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #e8d5a0;"/>
-    <Label fx:id="enemyLabel" style="-fx-font-size: 16px; -fx-text-fill: #b3a781;"/>
+
+    <ImageView fx:id="enemyImage" fitHeight="180" preserveRatio="true" smooth="false"/>
+    <Label fx:id="enemyLabel" style="-fx-font-size: 18px; -fx-text-fill: #b3a781;"/>
 
     <Button text="Combatir" onAction="#onFight"/>
     <Button text="Huir" onAction="#onFlee"/>
