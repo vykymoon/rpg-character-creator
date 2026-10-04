@@ -2,6 +2,49 @@
 
 Repositorio: [`vykymoon/rpg-character-creator`](https://github.com/vykymoon/rpg-character-creator)
 
+
+# RPG Character Creator
+
+Proyecto de Arquitectura de Software — Corte 2
+
+**Integrantes:** Victor Luna · Nicolas Salazar · Tiffany Cardona
+
+## Qué hicimos
+
+Aplicación de escritorio en Java 17 + JavaFX para crear personajes de rol, guardarlos y jugarlos sobre un mapa.
+
+- **Corte 1:** creador de personajes con wizard de 5 pasos, catálogo de razas, clases, habilidades y vestuario en JSON, galería con guardado, y aplicación de patrones de diseño y principios SOLID.
+- **Corte 2:** resolvimos dos retos: un mapa navegable con movimiento del jugador, y un modo multijugador por LAN donde varios jugadores comparten el mismo mapa en tiempo real. Elegimos una arquitectura cliente-servidor con servidor autoritativo sobre WebSocket (ADR-001) y medimos su rendimiento con pruebas de carga en k6.
+
+## Cómo ejecutar
+
+Requisitos: Java 17 o superior y Maven.
+
+| Qué | Comando |
+|---|---|
+| Aplicación (galería y wizard) | `mvn clean javafx:run` |
+| Servidor LAN | `mvn compile exec:java@server` |
+| Cliente gráfico LAN | `mvn compile javafx:run@game` |
+
+Para jugar en red: el host levanta el servidor y cada jugador abre el cliente e ingresa `ws://IP-DEL-HOST:8887`.
+
+## Tabla de trazabilidad de retos
+
+| Reto | Atributo de calidad | Decisión arquitectónica | Dónde está (repo) | Prueba que lo evidencia | Resultado |
+|---|---|---|---|---|---|
+| Mapa navegable con movimiento del jugador | Consistencia del estado del mapa | Las reglas de movimiento viven en el dominio, sin JavaFX ni red; el servidor las aplica antes de aceptar cada movimiento | `domain/GameMap.java`, `domain/MovementRules.java`, `application/GameSessionService.java`; modo un jugador en `game/` y `ui/PlayController.java` | Unitarias de `MovementRules` y `GameSessionService` | Pendiente |
+| Conexión de jugadores por LAN | Consistencia de estado entre jugadores | Cliente-servidor con servidor autoritativo (ADR-001) | `adapters/server/GameServer.java`, `adapters/server/client/GameClient.java`, `ui/GameApp.java` | Integración: servidor real + 2 clientes; uno se mueve y el otro recibe el estado | Pendiente |
+| Conexión de jugadores por LAN | Rendimiento y escalabilidad | WebSocket con broadcast del estado en cada movimiento | `adapters/server/GameServer.java` | Carga con k6: 2 y 8 jugadores, más barrido de 2 a 64 | Cumple el SLO: p95 de 43 ms y 0 % de errores con 8 jugadores |
+| Conexión de jugadores por LAN | Disponibilidad | El jugador host corre el servidor | `adapters/server/ServerMain.java` | No probada | Límite conocido: si el host cierra, la partida termina para todos |
+
+## Documentación
+
+La documentación completa está en la [wiki del proyecto](https://github.com/vykymoon/rpg-character-creator/wiki): arquitectura, multijugador LAN, guía de uso y [resultados de las pruebas de rendimiento](https://github.com/vykymoon/rpg-character-creator/wiki/Pruebas-de-rendimiento-e-Ideas-de-Mejoras).
+
+---
+
+*A continuación, la documentación del Corte 1.*
+
 ---
 
 ## 1. Presentación del Problema
