@@ -91,6 +91,71 @@ Referencia usada para justificar el problema de sobrecarga de opciones en creaci
 
 ## 4. Diseño de Software
 
+# ADR-001: Estilo arquitectónico para el multijugador LAN
+
+Estado: aceptado e implementado (commit `827ab59`).
+
+## Contexto
+
+En el Corte 1 la app era de un solo jugador. El reto del Corte 2 es que varios jugadores, cada uno en su propia instancia, compartan el mismo mapa por red local. Eso obliga a sincronizar el estado entre procesos independientes.
+
+## Opciones consideradas
+
+| | A. Peer-to-peer | B. Cliente-servidor autoritativo |
+|---|---|---|
+| Cómo funciona | Cada cliente anuncia su posición a los demás, sin servidor | Un servidor guarda el estado real, valida cada movimiento y lo difunde |
+| A favor | Sin punto único de falla | Una sola fuente de verdad; fácil de probar |
+| En contra | Los clientes pueden ver estados distintos; difícil de probar | El servidor es punto único de falla |
+
+## Decisión
+
+Se elige la opción B, porque garantiza que todos los jugadores vean el mismo estado y permite probarlo de forma reproducible. La comunicación es por WebSocket (Java-WebSocket) con mensajes JSON: `join` y `move` del cliente, `map` y `state` del servidor.
+
+El código se organiza en capas: `adapters/` (red) → `application/` (`GameSessionService`) → `domain/` (`GameMap`, `MovementRules`). El dominio no depende de JavaFX ni de la red.
+
+## Diagramas C4
+
+### Contexto
+
+```mermaid
+flowchart TB
+    J1["👤 Jugador host<br/>Levanta la partida"]
+    J2["👤 Otros jugadores<br/>Se unen por la red local"]
+    SIS["RPG Character Creator<br/>Crear personajes y jugar<br/>en un mapa compartido"]
+    J1 -->|Crea personajes y juega| SIS
+    J2 -->|Se conectan y juegan| SIS
+```
+
+### Contenedores
+
+```mermaid
+flowchart TB
+    subgraph HOST["Computador del host"]
+        SRV["Servidor de juego<br/>(Java + Java-WebSocket)<br/>ServerMain / GameServer<br/>Guarda el estado real"]
+        APP1["App del jugador<br/>(JavaFX)<br/>GameApp"]
+        F1[("characters.json<br/>personajes guardados")]
+    end
+    subgraph CLI["Computador de otro jugador"]
+        APP2["App del jugador<br/>(JavaFX)<br/>GameApp"]
+        F2[("characters.json")]
+    end
+    F1 --> APP1
+    F2 --> APP2
+    APP1 <-->|"WebSocket / JSON<br/>join, move → map, state"| SRV
+    APP2 <-->|"WebSocket / JSON<br/>por la red local"| SRV
+```
+
+## Consecuencias
+
+- Todos los jugadores ven el mismo estado, porque solo el servidor lo modifica.
+- Si el host cierra el servidor, la partida termina para todos.
+- Cada movimiento se reenvía a todos los jugadores. Las pruebas de carga muestran que hasta 32 jugadores la latencia sigue muy por debajo del objetivo de 150 ms.
+
+## Pendientes
+
+- El servidor se arranca aparte (`mvn compile exec:java@server`), no desde la app.
+- El servidor no verifica que el movimiento sea a una casilla vecina ni detecta colisiones entre jugadores.
+
 ### 4.1 Principios SOLID aplicados
 
 #### Antes / Después — Open/Closed Principle
