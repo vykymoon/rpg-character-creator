@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 
 /**
  * Paso 2 del wizard: clase de personaje (Guerrero, Mago, Pícaro).
@@ -15,6 +16,12 @@ public class Step2ClassController {
 
     @FXML
     private ComboBox<CharacterClass> classCombo;
+
+    @FXML
+    private Label classDescLabel;
+
+    @FXML
+    private Label classBonusLabel;
 
     private final WizardSession session;
 
@@ -30,6 +37,23 @@ public class Step2ClassController {
         if (session.getCharacterClass() != null) {
             classCombo.setValue(session.getCharacterClass());
         }
+
+        classCombo.valueProperty().addListener((obs, old, c) -> updatePreview(c));
+        updatePreview(classCombo.getValue());
+    }
+
+    /** Muestra la descripción y los bonos de atributos de la clase elegida. */
+    private void updatePreview(CharacterClass c) {
+        if (c == null) {
+            classDescLabel.setText("Elige una clase para ver qué aporta a tu personaje.");
+            classBonusLabel.setText("");
+            return;
+        }
+        classDescLabel.setText(c.getDescription());
+        classBonusLabel.setText(String.format(
+                "BONOS%n%nFUE +%d%nDES +%d%nINT +%d%nVIT +%d",
+                c.getBonusStrength(), c.getBonusDexterity(),
+                c.getBonusIntelligence(), c.getBonusVitality()));
     }
 
     @FXML

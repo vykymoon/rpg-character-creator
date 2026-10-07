@@ -1,15 +1,15 @@
 /*
- * Tema visual: Pixel Art / Retro 16-bit
+ * Tema visual: Pixel Art / Retro 16-bit  (v2)
  *
- * Paleta inspirada en consolas retro: fondo azul-morado oscuro,
- * acentos dorados/amarillos y morado eléctrico, bordes duros
- * (sin esquinas redondeadas, sin sombras suaves) para que se
- * sienta "de juego" en vez de UI de escritorio genérica.
+ * Paleta unificada (antes había dos paletas mezcladas):
+ *   fondo      #10121c -> #1b1e38 (degradado)
+ *   panel      #171a2e   borde #3b4070
+ *   dorado     #ffe066   (acento principal / selección)
+ *   morado     #7c1fa2   (sombra "pixel", pressed)
+ *   texto      #e8e8e8   apagado #9a9ab0
  *
- * Fuente pixel: "Press Start 2P" (Google Fonts, gratuita).
- * Si el archivo .ttf no está presente en resources/fonts/, JavaFX
- * simplemente cae a "monospace" — la app sigue funcionando igual,
- * solo se ve un poco menos "pixelada" hasta que agregues la fuente.
+ * Nota: "Press Start 2P" es una fuente de un solo peso. NO usar
+ * -fx-font-weight: bold (JavaFX la "engorda" y se ve borrosa).
  */
 
 @font-face {
@@ -17,16 +17,100 @@
     src: url("../fonts/PressStart2P-Regular.ttf");
 }
 
-.root {
-    -fx-background-color: #10121c;
-    -fx-font-family: "Press Start 2P", monospace;
-}
+/* ===== Base ===== */
 
-/* ===== Texto ===== */
+.root {
+    -fx-background-color: linear-gradient(to bottom, #1b1e38, #10121c);
+    -fx-font-family: "Press Start 2P", monospace;
+    -fx-control-inner-background: #10121c;
+    -fx-accent: #ffe066;
+    -fx-focus-color: #ffe066;
+    -fx-faint-focus-color: transparent;
+}
 
 .label {
     -fx-text-fill: #e8e8e8;
     -fx-font-size: 10px;
+}
+
+.screen {
+    -fx-background-color: transparent;
+}
+
+/* ===== Títulos ===== */
+
+.title {
+    -fx-font-size: 18px;
+    -fx-text-fill: #ffe066;
+    -fx-effect: dropshadow(gaussian, #7c1fa2, 0, 0, 3, 3);
+}
+
+.subtitle {
+    -fx-font-size: 9px;
+    -fx-text-fill: #9a9ab0;
+    -fx-line-spacing: 4px;
+}
+
+.step-caption {
+    -fx-font-size: 8px;
+    -fx-text-fill: #9a9ab0;
+}
+
+.field-label {
+    -fx-font-size: 9px;
+    -fx-text-fill: #ffe066;
+}
+
+.hint {
+    -fx-font-size: 8px;
+    -fx-text-fill: #9a9ab0;
+    -fx-line-spacing: 3px;
+}
+
+/* ===== Tarjetas (paneles) ===== */
+
+.card {
+    -fx-background-color: #171a2e;
+    -fx-border-color: #3b4070;
+    -fx-border-width: 2px;
+    -fx-padding: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 0, 0, 4, 4);
+}
+
+.card-title {
+    -fx-font-size: 11px;
+    -fx-text-fill: #7fd1ae;
+}
+
+.card-text {
+    -fx-font-size: 9px;
+    -fx-text-fill: #e8e8e8;
+    -fx-line-spacing: 4px;
+}
+
+.preview-avatar {
+    -fx-effect: dropshadow(gaussian, rgba(255,224,102,0.55), 14, 0.15, 0, 0);
+}
+
+/* ===== Barra de progreso del wizard ===== */
+
+.step-progress {
+    -fx-pref-height: 12px;
+}
+
+.step-progress > .track {
+    -fx-background-color: #0b0c14;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-border-color: #3b4070;
+    -fx-border-width: 2px;
+}
+
+.step-progress > .bar {
+    -fx-background-color: linear-gradient(to bottom, #ffe066, #e0a92e);
+    -fx-background-radius: 0;
+    -fx-background-insets: 2;
+    -fx-padding: 3px;
 }
 
 /* ===== Botones ===== */
@@ -41,6 +125,7 @@
     -fx-border-width: 2px;
     -fx-padding: 10 16 10 16;
     -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 0, 0, 3, 3);
 }
 
 .button:hover {
@@ -52,32 +137,111 @@
 .button:pressed {
     -fx-background-color: #7c1fa2;
     -fx-text-fill: #ffffff;
+    -fx-translate-x: 2px;
     -fx-translate-y: 2px;
+    -fx-effect: null;
 }
 
-/* ===== Campos de texto, combos ===== */
+.button:focused {
+    -fx-border-color: #ffffff;
+}
+
+/* Botón principal (acción destacada) */
+.button-primary {
+    -fx-background-color: linear-gradient(to bottom, #ffe066, #e0a92e);
+    -fx-text-fill: #10121c;
+    -fx-border-color: #fff6c2;
+}
+
+.button-primary:hover {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #10121c;
+    -fx-border-color: #ffe066;
+}
+
+.button-primary:pressed,
+.button-danger:pressed {
+    -fx-background-color: #7c1fa2;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #ffe066;
+}
+
+/* Botón peligroso (eliminar) */
+.button-danger {
+    -fx-background-color: #3a1a24;
+    -fx-text-fill: #ff8a8a;
+    -fx-border-color: #d9534f;
+}
+
+.button-danger:hover {
+    -fx-background-color: #d9534f;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #ffffff;
+}
+
+/* ===== Campos de texto y combos ===== */
 
 .text-field,
-.combo-box,
-.combo-box .list-cell,
 .text-area {
-    -fx-background-color: #1c1f33;
+    -fx-background-color: #10121c;
     -fx-text-fill: #e8e8e8;
-    -fx-font-size: 9px;
+    -fx-prompt-text-fill: #5f6384;
+    -fx-font-size: 10px;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
     -fx-border-color: #4a4e69;
     -fx-border-width: 2px;
+    -fx-padding: 8px;
     -fx-highlight-fill: #ffe066;
     -fx-highlight-text-fill: #10121c;
 }
 
+.text-field:focused,
+.text-area:focused {
+    -fx-border-color: #ffe066;
+    -fx-effect: dropshadow(gaussian, rgba(255,224,102,0.35), 8, 0.2, 0, 0);
+}
+
+.text-area .content,
+.text-area .scroll-pane {
+    -fx-background-color: #10121c;
+}
+
+.text-area .text {
+    -fx-fill: #e8e8e8;
+}
+
+.combo-box {
+    -fx-background-color: #10121c;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-color: #4a4e69;
+    -fx-border-width: 2px;
+    -fx-padding: 2px;
+}
+
+.combo-box:hover,
+.combo-box:focused {
+    -fx-border-color: #ffe066;
+}
+
+.combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e8e8e8;
+    -fx-font-size: 10px;
+}
+
 .combo-box .arrow-button {
     -fx-background-color: #2b2f4a;
+    -fx-background-radius: 0;
+}
+
+.combo-box .arrow-button .arrow {
+    -fx-background-color: #ffe066;
 }
 
 .combo-box-popup .list-view {
-    -fx-background-color: #1c1f33;
+    -fx-background-color: #10121c;
     -fx-border-color: #ffe066;
     -fx-border-width: 2px;
 }
@@ -85,17 +249,34 @@
 /* ===== Listas ===== */
 
 .list-view {
-    -fx-background-color: #1c1f33;
-    -fx-border-color: #4a4e69;
+    -fx-background-color: #10121c;
+    -fx-border-color: #3b4070;
     -fx-border-width: 2px;
     -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.list-view:focused {
+    -fx-border-color: #ffe066;
+}
+
+.list-view .placeholder .label {
+    -fx-text-fill: #5f6384;
+    -fx-font-size: 9px;
+    -fx-line-spacing: 6px;
+    -fx-text-alignment: center;
 }
 
 .list-cell {
-    -fx-background-color: #1c1f33;
+    -fx-background-color: #10121c;
     -fx-text-fill: #e8e8e8;
-    -fx-font-size: 9px;
+    -fx-font-size: 10px;
     -fx-padding: 8px;
+}
+
+.list-cell:odd {
+    -fx-background-color: #13152a;
 }
 
 .list-cell:filled:hover {
@@ -107,46 +288,55 @@
     -fx-text-fill: #10121c;
 }
 
-/* ===== Diálogos / Alertas =====
-   Nota: los Alert de JavaFX abren su propia ventana y no heredan
-   este CSS automáticamente. Ver UiUtils.showAlert() para aplicarlo. */
+/* ===== Filas de la galería ===== */
 
-.dialog-pane {
-    -fx-background-color: #10121c;
-    -fx-font-family: "Press Start 2P", monospace;
+.character-cell {
+    -fx-padding: 10px 12px 10px 12px;
+    -fx-border-color: transparent transparent #2b2f4a transparent;
+    -fx-border-width: 0 0 2 0;
 }
 
-.dialog-pane .content.label {
-    -fx-text-fill: #e8e8e8;
-    -fx-font-size: 9px;
-}
-
-.dialog-pane .header-panel {
-    -fx-background-color: #2b2f4a;
-}
-
-.dialog-pane .header-panel .label {
+.cell-name {
+    -fx-font-size: 11px;
     -fx-text-fill: #ffe066;
-    -fx-font-size: 10px;
 }
 
-.dialog-pane .button-bar .button {
-    -fx-background-color: #2b2f4a;
-    -fx-text-fill: #ffe066;
-    -fx-border-color: #ffe066;
-    -fx-border-width: 2px;
-    -fx-background-radius: 0;
+.cell-sub {
+    -fx-font-size: 8px;
+    -fx-text-fill: #9a9ab0;
 }
 
-.dialog-pane .button-bar .button:hover {
-    -fx-background-color: #ffe066;
+.character-cell:filled:selected .cell-name,
+.character-cell:filled:selected .cell-sub {
     -fx-text-fill: #10121c;
 }
 
-/* ===== Scrollbars (que combinen con el tema) ===== */
+/* ===== Filas de vestuario (Paso 4) ===== */
+
+.outfit-name {
+    -fx-font-size: 10px;
+    -fx-text-fill: #e8e8e8;
+}
+
+.outfit-slot {
+    -fx-font-size: 8px;
+    -fx-text-fill: #7fd1ae;
+}
+
+.list-cell:filled:selected .outfit-name,
+.list-cell:filled:selected .outfit-slot {
+    -fx-text-fill: #10121c;
+}
+
+/* ===== Separadores y scrollbars ===== */
+
+.separator .line {
+    -fx-border-color: #3b4070;
+    -fx-border-width: 1 0 0 0;
+}
 
 .scroll-bar {
-    -fx-background-color: #1c1f33;
+    -fx-background-color: #10121c;
 }
 
 .scroll-bar .thumb {
@@ -158,64 +348,108 @@
     -fx-background-color: #ffe066;
 }
 
-/* ============================================================
-   AGREGAR esto a tu retro-theme.css existente (no lo reemplaza).
-   Ajusta los colores/hex a los que ya venías usando para que
-   combine con el resto de la app. Los nombres de -fx-font-family
-   están en placeholder: cámbialos por la fuente pixel que ya
-   cargaste con el @font-face / Font.loadFont.
-   ============================================================ */
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: #10121c;
+    -fx-padding: 0;
+}
 
-/* --- Ventana de detalle de personaje --- */
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}
+
+/* ===== Diálogos / Alertas (DialogUtils) ===== */
+
+.dialog-pane,
+.retro-dialog {
+    -fx-background-color: #171a2e;
+    -fx-border-color: #ffe066;
+    -fx-border-width: 2px;
+    -fx-font-family: "Press Start 2P", monospace;
+}
+
+.dialog-pane .content.label,
+.retro-dialog .content.label {
+    -fx-text-fill: #e8e8e8;
+    -fx-font-size: 9px;
+    -fx-line-spacing: 4px;
+}
+
+.dialog-pane .header-panel,
+.retro-dialog .header-panel {
+    -fx-background-color: #2b2f4a;
+}
+
+.dialog-pane .header-panel .label,
+.retro-dialog .header-panel .label {
+    -fx-text-fill: #ffe066;
+    -fx-font-size: 10px;
+}
+
+.dialog-pane > .button-bar > .container {
+    -fx-background-color: #171a2e;
+}
+
+/* ===== Detalle de personaje ===== */
+
 .detail-root {
-    -fx-background-color: #1a1a2e;
-    -fx-border-color: #e0a92e;
-    -fx-border-width: 3;
+    -fx-background-color: linear-gradient(to bottom, #1b1e38, #10121c);
+    -fx-border-color: #ffe066;
+    -fx-border-width: 3px;
 }
 
 .detail-name {
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #f4e9d8;
+    -fx-font-size: 18px;
+    -fx-text-fill: #ffe066;
+    -fx-effect: dropshadow(gaussian, #7c1fa2, 0, 0, 3, 3);
 }
 
-.tag-race, .tag-class {
-    -fx-padding: 4 10 4 10;
-    -fx-background-radius: 2;
-    -fx-font-size: 11px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #1a1a2e;
+.tag-race,
+.tag-class {
+    -fx-padding: 5 10 5 10;
+    -fx-font-size: 9px;
+    -fx-text-fill: #10121c;
 }
 
-.tag-race { -fx-background-color: #7fd1ae; }
-.tag-class { -fx-background-color: #e0a92e; }
+.tag-race  { -fx-background-color: #7fd1ae; }
+.tag-class { -fx-background-color: #ffe066; }
+
+.avatar-frame {
+    -fx-effect: dropshadow(gaussian, rgba(255,224,102,0.55), 14, 0.15, 0, 0);
+}
 
 .section-title {
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #e0a92e;
+    -fx-font-size: 10px;
+    -fx-text-fill: #ffe066;
     -fx-padding: 4 0 0 0;
 }
 
 .stat-label {
-    -fx-text-fill: #f4e9d8;
-    -fx-font-size: 12px;
+    -fx-text-fill: #e8e8e8;
+    -fx-font-size: 9px;
 }
 
 .stat-value {
-    -fx-text-fill: #f4e9d8;
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
+    -fx-text-fill: #ffe066;
+    -fx-font-size: 10px;
+}
+
+.stat-bar > .track {
+    -fx-background-color: #0b0c14;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-border-color: #3b4070;
+    -fx-border-width: 2px;
 }
 
 .stat-bar > .bar {
     -fx-background-radius: 0;
-    -fx-padding: 6px;
+    -fx-background-insets: 2;
+    -fx-padding: 5px;
 }
-.stat-bar > .track {
-    -fx-background-radius: 0;
-    -fx-background-color: #0f0f1c;
-}
+
 .stat-bar-str > .bar { -fx-background-color: #d9534f; }
 .stat-bar-dex > .bar { -fx-background-color: #7fd1ae; }
 .stat-bar-int > .bar { -fx-background-color: #5bc0de; }
@@ -223,77 +457,58 @@
 
 .chip-list { -fx-padding: 0 0 6 0; }
 
-.skill-chip, .outfit-chip {
-    -fx-background-color: #262640;
-    -fx-text-fill: #f4e9d8;
+.skill-chip,
+.outfit-chip {
+    -fx-background-color: #262a4a;
+    -fx-border-color: #3b4070;
+    -fx-border-width: 2px;
+    -fx-text-fill: #e8e8e8;
     -fx-padding: 6 10 6 10;
-    -fx-background-radius: 2;
-    -fx-font-size: 12px;
+    -fx-font-size: 9px;
 }
 
 .empty-chip {
-    -fx-text-fill: #7a7a8c;
-    -fx-font-style: italic;
-    -fx-font-size: 12px;
+    -fx-text-fill: #5f6384;
+    -fx-font-size: 9px;
 }
 
 .close-button {
-    -fx-background-color: #e0a92e;
-    -fx-text-fill: #1a1a2e;
-    -fx-font-weight: bold;
+    -fx-background-color: linear-gradient(to bottom, #ffe066, #e0a92e);
+    -fx-text-fill: #10121c;
+    -fx-border-color: #fff6c2;
     -fx-padding: 8 22 8 22;
-    -fx-background-radius: 2;
-    -fx-cursor: hand;
-}
-.close-button:hover { -fx-background-color: #f4c04c; }
-
-/* --- Alerts (DialogUtils) --- */
-.retro-dialog {
-    -fx-background-color: #1a1a2e;
-    -fx-border-color: #e0a92e;
-    -fx-border-width: 2;
-}
-.retro-dialog .content.label,
-.retro-dialog .header-panel .label {
-    -fx-text-fill: #f4e9d8;
-}
-.retro-dialog .header-panel {
-    -fx-background-color: #262640;
-}
-.retro-dialog .button-bar .button {
-    -fx-background-color: #e0a92e;
-    -fx-text-fill: #1a1a2e;
-    -fx-font-weight: bold;
-    -fx-background-radius: 2;
-    -fx-cursor: hand;
-}
-.retro-dialog .button-bar .button:hover { -fx-background-color: #f4c04c; }
-
-/* --- Filas de la galería (character-cell), opcional --- */
-.character-cell {
-    -fx-background-color: #1a1a2e;
-    -fx-text-fill: #f4e9d8;
-    -fx-padding: 8 10 8 10;
-    -fx-font-size: 13px;
-}
-.character-cell:selected {
-    -fx-background-color: #e0a92e;
-    -fx-text-fill: #1a1a2e;
 }
 
-.step-caption {
-    -fx-font-size: 12px;
-    -fx-text-fill: #9a9ab0;
+.close-button:hover {
+    -fx-background-color: #ffffff;
 }
 
-.summary-box .content {
-    -fx-background-color: #0f0f1c;
-}
-.summary-box .text {
-    -fx-fill: #f4e9d8;
-}
+/* ===== Resumen (Paso 5) ===== */
+
 .summary-box {
-    -fx-text-fill: #f4e9d8;
-    -fx-highlight-fill: #e0a92e;
-    -fx-highlight-text-fill: #1a1a2e;
+    -fx-text-fill: #e8e8e8;
+    -fx-highlight-fill: #ffe066;
+    -fx-highlight-text-fill: #10121c;
+    -fx-font-size: 10px;
+}
+
+/* ===== Pantalla de combate ===== */
+
+.battle-root {
+    -fx-background-color: radial-gradient(center 50% 40%, radius 80%, #3a2418, #120b08);
+}
+
+.battle-title {
+    -fx-font-size: 18px;
+    -fx-text-fill: #ff8a8a;
+    -fx-effect: dropshadow(gaussian, #000000, 0, 0, 3, 3);
+}
+
+.battle-enemy {
+    -fx-font-size: 12px;
+    -fx-text-fill: #e8d5a0;
+}
+
+.battle-enemy-image {
+    -fx-effect: dropshadow(gaussian, rgba(217,83,79,0.6), 20, 0.2, 0, 0);
 }
