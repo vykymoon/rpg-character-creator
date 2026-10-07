@@ -70,6 +70,38 @@
                 </configuration>
             </plugin>
 
+            <!-- Surefire ejecuta las pruebas UNITARIAS (*Test.java) en "mvn test".
+                 Se fija la version a proposito: la que trae el ciclo de vida por
+                 defecto es anterior a la JUnit Platform e ignoraria en silencio
+                 las pruebas de JUnit 5 (build verde con 0 pruebas ejecutadas). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+
+            <!-- Failsafe ejecuta las pruebas de INTEGRACION (*IT.java) en
+                 "mvn verify". Van aparte porque abren puertos de red y tardan
+                 segundos: el ciclo rapido de desarrollo no deberia pagar eso. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Plugin JavaFX:
                  mvn javafx:run            -> wizard (MainApp)
                  mvn compile javafx:run@game -> juego multijugador (GameApp) -->
