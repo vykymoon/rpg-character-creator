@@ -17,6 +17,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -36,14 +37,22 @@ public class GalleryController {
     public void initialize() {
         refreshList();
 
+        Label empty = new Label("Aún no tienes personajes.\n¡Crea el primero!");
+        characterListView.setPlaceholder(empty);
+
         characterListView.setCellFactory(list -> new ListCell<>() {
             private final ImageView avatar = new ImageView();
-            private final Label label = new Label();
-            private final HBox row = new HBox(10, avatar, label);
+            private final Label nameLabel = new Label();
+            private final Label subLabel = new Label();
+            private final VBox texts = new VBox(6, nameLabel, subLabel);
+            private final HBox row = new HBox(14, avatar, texts);
 
             {
-                avatar.setFitWidth(36);
-                avatar.setFitHeight(36);
+                avatar.setFitWidth(48);
+                avatar.setFitHeight(48);
+                nameLabel.getStyleClass().add("cell-name");
+                subLabel.getStyleClass().add("cell-sub");
+                texts.setAlignment(Pos.CENTER_LEFT);
                 avatar.setPreserveRatio(true);
                 avatar.setSmooth(false);
                 row.setAlignment(Pos.CENTER_LEFT);
@@ -62,7 +71,8 @@ public class GalleryController {
                 String className = character.getCharacterClass() != null ? character.getCharacterClass().getName() : "-";
 
                 avatar.setImage(RaceAvatarLoader.load(character.getRace()));
-                label.setText(character.getName() + "   —   " + raceName + " / " + className);
+                nameLabel.setText(character.getName());
+                subLabel.setText(raceName + "  ·  " + className);
 
                 if (!getStyleClass().contains("character-cell")) {
                     getStyleClass().add("character-cell");
@@ -100,6 +110,7 @@ public class GalleryController {
         openDetailWindow(selected, event);
     }
 
+    // --- MODO UN JUGADOR NORMAL ---
     @FXML
     public void onPlay(ActionEvent event) {
         Character selected = characterListView.getSelectionModel().getSelectedItem();
@@ -108,6 +119,39 @@ public class GalleryController {
             return;
         }
         SceneNavigator.goTo(event, "/fxml/play.fxml", new PlayController(selected));
+    }
+
+    // --- NUEVO: INICIAR SERVIDOR LAN ---
+    @FXML
+    public void onStartServer(ActionEvent event) {
+        // Ejecutamos el servidor en un hilo nuevo para no congelar la pantalla del menú
+        new Thread(() -> {
+            try {
+                // NOTA: Ajusta "ServerApp" al nombre exacto de la clase principal de tu servidor si se llama distinto
+                com.proyecto.rpg.adapters.server.ServerMain.main(new String[]{});
+            } catch (Exception ex) {
+                System.err.println("Error al iniciar el servidor: " + ex.getMessage());
+            }
+        }).start();
+
+        DialogUtils.info("Servidor", "Servidor LAN iniciado.\nYa puedes conectar el multijugador.");
+    }
+
+    // --- NUEVO: MODO MULTIJUGADOR ---
+    @FXML
+    public void onPlayMultiplayer(ActionEvent event) {
+        try {
+            // Cerramos la ventana del menú actual
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            currentStage.close();
+
+            // Iniciamos tu GameApp (el que tiene el mapa del bosque que arreglamos)
+            Stage multiStage = new Stage();
+            new GameApp().start(multiStage);
+        } catch (Exception ex) {
+            DialogUtils.warning("Error", "No se pudo iniciar el modo multijugador.");
+            ex.printStackTrace();
+        }
     }
 
     private void openDetailWindow(Character character, ActionEvent event) {

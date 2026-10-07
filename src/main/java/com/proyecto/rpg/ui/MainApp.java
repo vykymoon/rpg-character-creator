@@ -20,10 +20,12 @@ public class MainApp extends Application {
         loader.setController(new GalleryController());
         Parent root = loader.load();
 
-        Scene scene = new Scene(root, 480, 460);
+        Scene scene = new Scene(root, 760, 640);
         scene.getStylesheets().add(getClass().getResource("/css/retro-theme.css").toExternalForm());
 
         stage.setTitle("RPG Character Creator");
+        stage.setMinWidth(680);
+        stage.setMinHeight(600);
         stage.setScene(scene);
         stage.show();
     }
