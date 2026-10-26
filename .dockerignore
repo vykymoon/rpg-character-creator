@@ -1,0 +1,15 @@
+target/
+.git/
+.github/
+.idea/
+.vscode/
+out/
+*.iml
+*.md
+docs/
+perf/
+UML.png
+.env
+.env.*
+docker-compose*.yml
+src/main/resources/data/characters.json

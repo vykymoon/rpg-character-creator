@@ -1,0 +1,14 @@
+name: rpg
+
+services:
+  servidor:
+    build: .
+    image: rpg-servidor:dev
+    ports:
+      - "${SERVER_PORT:-8887}:${SERVER_PORT:-8887}"
+    environment:
+      # La usa el HEALTHCHECK de la imagen para saber en que puerto comprobar
+      SERVER_PORT: ${SERVER_PORT:-8887}
+    # Argumento del ServerMain: el puerto en el que escucha
+    command: ["${SERVER_PORT:-8887}"]
+    restart: unless-stopped
