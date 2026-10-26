@@ -5,3 +5,4 @@ target/
 out/
 .DS_Store
 src/main/resources/data/characters.json
+.env
