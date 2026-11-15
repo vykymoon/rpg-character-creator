@@ -11,9 +11,11 @@
 La convención de nombres decide quién ejecuta qué. Las clases que terminan en `Test` son unitarias y las corre Surefire en `mvn test`; las que terminan en `IT` abren puertos de red y las corre Failsafe en `mvn verify`. Una prueba que abre un socket no debe llamarse `Test`: volvería lento y frágil el ciclo rápido de desarrollo.
 
 ```
-mvn test      solo unitarias
-mvn verify    unitarias e integración
+mvn test      unitarias, cobertura (JaCoCo) y reglas de arquitectura (ArchUnit)
+mvn verify    todo lo anterior y las de integración
 ```
+
+En el Corte 3 todas corren en el pipeline (`ci.yml`), cada nivel como un check separado del pull request. Ver [docs/devops.md](devops.md).
 
 ## Pruebas unitarias
 
@@ -42,15 +44,25 @@ Las aserciones se hacen sobre el JSON que el servidor emite, no sobre campos int
 
 La diferencia con las unitarias está en la tercera: una unitaria puede demostrar que `move()` devuelve `false` ante una casilla bloqueada, pero no que el otro jugador siga viendo al primero en su sitio. Eso solo se ve con el servidor y dos clientes de verdad.
 
-## Las dos pruebas desactivadas
+## Las dos pruebas que estaban desactivadas
 
-`GameSessionServiceTest` tiene dos pruebas con `@Disabled`. No están rotas: documentan comportamiento que un servidor autoritativo debería tener y el código todavía no cumple.
+En el Corte 2, `GameSessionServiceTest` tenía dos pruebas con `@Disabled` que documentaban deuda: el teletransporte y el `move` sin `join`. En el Corte 3 se corrigió `GameSessionService.move()` y las dos pruebas corren sin la anotación. Si alguien reintroduce el defecto, el pipeline se detiene.
 
-La primera es que `move()` acepta saltar a cualquier casilla caminable del mapa, no solo a una vecina. Un cliente modificado puede cruzar el mapa con un solo mensaje.
+## Corte 3: pruebas nuevas
 
-La segunda es que `move()` crea al jugador aunque nunca haya hecho `join`.
+| Clase | Nivel | Qué verifica | Pruebas |
+|---|---|---|---|
+| `MovementRulesTest` (ampliada) | Unitaria | Pasos a casillas vecinas, saltos rechazados | +3 |
+| `GameSessionServiceTest` (ampliada) | Unitaria | Pendientes del Corte 2 activos, cupo de jugadores, id vacío | +5 |
+| `CatalogoJsonTest` | Unitaria | Los 4 JSON reales: ids únicos, datos válidos, restricciones por raza y clase | 8 |
+| `CharacterBuilderTest` | Unitaria | Personaje válido, estadísticas, habilidad de otra clase rechazada, incompletos | 3 |
+| `CharacterDAOJsonTest` | Unitaria | Ida y vuelta, actualización, persistencia entre instancias, borrado, `existsByName` | 6 |
+| `ArchitectureTest` | Arquitectura | 5 reglas de dependencias sacadas de los ADR | 5 |
+| `MultijugadorIT` (ampliada) | Integración | Amenazas A-01 a A-05 de `docs/seguridad.md`, `/health` con cabeceras de seguridad, `/metrics` | +7 |
 
-Se activan quitando la anotación cuando se corrija `GameSessionService.move()`. Dejarlas escritas y desactivadas vale más que una lista de pendientes en un documento: el día que alguien arregle el método, la prueba ya está ahí para confirmarlo.
+**Cobertura.** JaCoCo mide la cobertura de líneas de `domain` + `application`. La meta `check` rompe `mvn test` si baja del 80 %; el enunciado pide al menos 70 %. El reporte HTML queda como artefacto en cada ejecución (`reportes-pruebas-unitarias`).
+
+**Pruebas de humo y de carga en el pipeline.** `perf/scripts/smoke_k6.js` recorre el flujo principal contra el entorno desplegado. `perf/scripts/lan_ws_k6.js` corre con 8 jugadores durante 1 minuto con el SLO como *threshold*.
 
 ## Resultados de la ejecución
 
@@ -95,8 +107,6 @@ Y los 45 ms de latencia que aparecían con 4 jugadores o más no venían del có
 
 ## Lo que no está probado
 
-El wizard de creación de personajes no tiene pruebas. Las reglas que importan ahí son las restricciones de raza y clase (`CatalogRestriction`) y la validación del `CharacterBuilder`, y ambas son lógica pura, fáciles de probar sin JavaFX. Es el hueco más grande que queda.
-
-La persistencia (`CharacterDAOJson`) tampoco. Una prueba de ida y vuelta sobre un archivo temporal cubriría que lo que se guarda es lo que se lee.
+Los dos huecos que el Corte 2 declaró aquí, las reglas del wizard (`CatalogRestriction`, `CharacterBuilder`) y la persistencia (`CharacterDAOJson`), se cerraron en el Corte 3 con `CatalogoJsonTest`, `CharacterBuilderTest` y `CharacterDAOJsonTest`.
 
 La interfaz gráfica no tiene pruebas automáticas y no está previsto que las tenga: el esfuerzo de TestFX no se justifica para el alcance de este proyecto.
