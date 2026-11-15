@@ -21,41 +21,89 @@ public class GameSessionService {
     private final MovementRules movementRules;
     private final Gson gson = new Gson();
 
+    /** Sin limite practico de jugadores: lo usan las pruebas y el modo LAN. */
+    public static final int SIN_LIMITE = Integer.MAX_VALUE;
+
+    private final int maxPlayers;
+
     public GameSessionService() {
-        this(new GameMap(50, 50));
+        this(new GameMap(50, 50), SIN_LIMITE);
+    }
+
+    public GameSessionService(int maxPlayers) {
+        this(new GameMap(50, 50), maxPlayers);
     }
 
     public GameSessionService(GameMap map) {
+        this(map, SIN_LIMITE);
+    }
+
+    public GameSessionService(GameMap map, int maxPlayers) {
+        if (maxPlayers < 1) {
+            throw new IllegalArgumentException("maxPlayers debe ser al menos 1");
+        }
         this.map = map;
         this.movementRules = new MovementRules(map);
+        this.maxPlayers = maxPlayers;
     }
 
-    public synchronized void join(String playerId) {
-        join(playerId, null, null, null, new ArrayList<>());
+    public synchronized boolean join(String playerId) {
+        return join(playerId, null, null, null, new ArrayList<>());
     }
 
-    public synchronized void join(String playerId, String name, String race,
-                                  String characterClass, List<String> items) {
+    /**
+     * Registra al jugador o actualiza sus datos si ya estaba.
+     *
+     * @return false si la partida esta llena y el jugador es nuevo.
+     */
+    public synchronized boolean join(String playerId, String name, String race,
+                                     String characterClass, List<String> items) {
+        if (playerId == null || playerId.isBlank()) {
+            return false;
+        }
+        if (!players.containsKey(playerId) && players.size() >= maxPlayers) {
+            return false;
+        }
         PlayerState s = players.computeIfAbsent(playerId,
                 id -> new PlayerState(id, SPAWN_X, SPAWN_Y));
         s.name = name;
         s.race = race;
         s.characterClass = characterClass;
-        s.items = items;
+        s.items = items != null ? items : new ArrayList<>();
+        return true;
     }
 
+    /**
+     * Mueve al jugador si el paso es valido.
+     *
+     * Rechaza: jugadores que nunca hicieron join (antes se creaban solos),
+     * destinos bloqueados o fuera del mapa, y saltos a casillas que no son
+     * vecinas (antes un cliente modificado podia teletransportarse). Son los
+     * dos pendientes que el Corte 2 dejo documentados con pruebas @Disabled.
+     */
     public synchronized boolean move(String playerId, int x, int y) {
-        if (!movementRules.isValidMove(x, y)) {
-            return false;
-        }
         PlayerState state = players.get(playerId);
         if (state == null) {
-            players.put(playerId, new PlayerState(playerId, x, y));
-        } else {
-            state.x = x;
-            state.y = y;
+            return false;
         }
+        if (!movementRules.isValidStep(state.x, state.y, x, y)) {
+            return false;
+        }
+        state.x = x;
+        state.y = y;
         return true;
+    }
+
+    public synchronized boolean isJoined(String playerId) {
+        return players.containsKey(playerId);
+    }
+
+    public synchronized int playerCount() {
+        return players.size();
+    }
+
+    public int maxPlayers() {
+        return maxPlayers;
     }
 
     public synchronized void remove(String playerId) {

@@ -1,7 +1,7 @@
 package com.proyecto.rpg.ui;
 
 import com.proyecto.rpg.dao.CharacterDAO;
-import com.proyecto.rpg.dao.CharacterDAOJson;
+import com.proyecto.rpg.dao.CharacterDAOProvider;
 import com.proyecto.rpg.model.Character;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -31,7 +31,7 @@ public class GalleryController {
     @FXML
     private ListView<Character> characterListView;
 
-    private final CharacterDAO characterDAO = new CharacterDAOJson();
+    private final CharacterDAO characterDAO = CharacterDAOProvider.get();
 
     @FXML
     public void initialize() {

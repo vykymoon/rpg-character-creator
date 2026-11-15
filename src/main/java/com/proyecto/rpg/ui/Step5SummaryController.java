@@ -2,7 +2,7 @@ package com.proyecto.rpg.ui;
 
 import com.proyecto.rpg.builder.CharacterBuilder;
 import com.proyecto.rpg.dao.CharacterDAO;
-import com.proyecto.rpg.dao.CharacterDAOJson;
+import com.proyecto.rpg.dao.CharacterDAOProvider;
 import com.proyecto.rpg.model.Character;
 import com.proyecto.rpg.model.Outfit;
 import com.proyecto.rpg.model.Skill;
@@ -16,7 +16,7 @@ public class Step5SummaryController {
     private TextArea summaryArea;
 
     private final WizardSession session;
-    private final CharacterDAO characterDAO = new CharacterDAOJson();
+    private final CharacterDAO characterDAO = CharacterDAOProvider.get();
 
     public Step5SummaryController(WizardSession session) {
         this.session = session;

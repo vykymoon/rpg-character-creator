@@ -53,4 +53,25 @@ class MovementRulesTest {
         assertFalse(rules.isValidMove(12, 10));
         assertFalse(rules.isValidMove(35, 32));
     }
+
+    @Test
+    @DisplayName("Acepta un paso a una casilla vecina, incluida la diagonal")
+    void aceptaPasoVecino() {
+        assertTrue(rules.isValidStep(2, 2, 3, 2));
+        assertTrue(rules.isValidStep(2, 2, 3, 3));
+        assertTrue(rules.isValidStep(3, 3, 2, 2));
+    }
+
+    @Test
+    @DisplayName("Rechaza un salto a una casilla que no es vecina")
+    void rechazaSaltoNoVecino() {
+        assertFalse(rules.isValidStep(2, 2, 4, 4));
+        assertFalse(rules.isValidStep(2, 2, 2, 5));
+    }
+
+    @Test
+    @DisplayName("Rechaza un paso vecino hacia una casilla bloqueada")
+    void rechazaPasoVecinoBloqueado() {
+        assertFalse(rules.isValidStep(1, 1, 0, 0));
+    }
 }

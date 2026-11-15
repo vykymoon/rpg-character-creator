@@ -104,34 +104,17 @@ public class GameApp extends Application {
         stage.setOnCloseRequest(e -> { client.close(); Platform.exit(); });
         stage.show();
 
-        // --- CÓDIGO A PRUEBA DE BALAS ---
-        String[] posiblesRutas = {
-                "/map/background_multiplayer.jpg",
-                "/battle/map/background_multiplayer.jpg",
-                "/background_multiplayer.jpg"
-        };
-
-        for (String ruta : posiblesRutas) {
-            java.net.URL imageUrl = getClass().getResource(ruta);
-            if (imageUrl != null) {
-                mapImage = new javafx.scene.image.Image(imageUrl.toExternalForm());
-                System.out.println("¡ÉXITO! Imagen encontrada en el proyecto: " + ruta);
-                break;
-            }
+        // Fondo del mapa multijugador. Se lee del classpath para que funcione
+        // igual desde IntelliJ que desde el .jar publicado en GitHub Releases
+        // (antes habia una ruta fija a la carpeta Descargas de un integrante).
+        java.net.URL imageUrl = getClass().getResource("/sprites/map/background_multiplayer.jpg");
+        if (imageUrl != null) {
+            mapImage = new javafx.scene.image.Image(imageUrl.toExternalForm());
+        } else {
+            System.err.println("[game] no se encontro el fondo del mapa; se dibuja el color base");
         }
 
-        // Plan de emergencia: Si no la encuentra en el proyecto, la jala de tus Descargas directo
-        if (mapImage == null) {
-            System.err.println("No se encontró en resources, forzando carga desde Descargas...");
-            java.io.File file = new java.io.File("C:\\Users\\AsusZenbook\\Downloads\\background_multiplayer.jpg");
-            if (file.exists()) {
-                mapImage = new javafx.scene.image.Image(file.toURI().toString());
-                System.out.println("¡ÉXITO! Imagen cargada desde tus Descargas.");
-            } else {
-                System.err.println("ERROR CRÍTICO: Tampoco existe en Descargas.");
-            }
-        }
-        // --------------------------------
+
 
         draw();
     }
