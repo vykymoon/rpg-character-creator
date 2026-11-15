@@ -1,0 +1,79 @@
+# Despliegue en Kubernetes con kind (bonificacion del Corte 3).
+#
+# Levanta un cluster kind, carga la imagen construida en el job, aplica los
+# manifiestos de k8s/ y verifica: rollout listo (probes), healthcheck por el
+# Service, prueba de humo del flujo principal y que las NetworkPolicy se
+# cumplan (entrada permitida al 8887, salida del servidor bloqueada).
+name: Kubernetes
+
+on:
+  push:
+    branches: [main]
+    paths: ['k8s/**', 'Dockerfile', 'src/main/**', 'pom.xml', '.github/workflows/k8s.yml']
+  pull_request:
+    paths: ['k8s/**', 'Dockerfile', '.github/workflows/k8s.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kind:
+    name: Despliegue en kind
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Construir la imagen
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: rpg-servidor:k8s
+          build-args: APP_VERSION=k8s
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: rpg
+      - name: Cargar la imagen en el cluster
+        run: kind load docker-image rpg-servidor:k8s --name rpg
+      - name: Aplicar manifiestos
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -k k8s/
+          # El codigo de sala de ejemplo se reemplaza por uno aleatorio.
+          kubectl -n rpg create secret generic rpg-servidor-secret \
+            --from-literal=JOIN_CODE="$(openssl rand -hex 12)" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n rpg rollout restart deployment/rpg-servidor
+          kubectl -n rpg rollout status deployment/rpg-servidor --timeout=180s
+      - name: Healthcheck a traves del Service
+        run: |
+          kubectl -n rpg port-forward svc/rpg-servidor 8887:8887 > /tmp/pf.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://localhost:8887/health && exit 0; sleep 2; done
+          cat /tmp/pf.log; exit 1
+      - uses: grafana/setup-k6-action@v1
+      - name: Prueba de humo en el cluster
+        run: |
+          CODE="$(kubectl -n rpg get secret rpg-servidor-secret -o jsonpath='{.data.JOIN_CODE}' | base64 -d)"
+          k6 run --env HTTP_URL=http://localhost:8887 --env WS_URL=ws://localhost:8887/ws \
+                 --env JOIN_CODE="$CODE" --env EXPECTED_VERSION=k8s perf/scripts/smoke_k6.js
+      - name: NetworkPolicy - la entrada al 8887 desde otro pod funciona
+        run: |
+          kubectl run cliente --rm -i --restart=Never --image=curlimages/curl:8.23.0 -- \
+            curl -fsS --max-time 10 http://rpg-servidor.rpg.svc.cluster.local:8887/health
+      - name: NetworkPolicy - el servidor no puede abrir conexiones de salida
+        run: |
+          POD="$(kubectl -n rpg get pod -l app.kubernetes.io/name=rpg-servidor -o jsonpath='{.items[0].metadata.name}')"
+          if kubectl -n rpg exec "$POD" -- bash -c 'timeout 5 bash -c "exec 3<>/dev/tcp/1.1.1.1/443"'; then
+            echo "La salida del servidor deberia estar bloqueada por la NetworkPolicy" >&2
+            exit 1
+          fi
+          echo "Salida bloqueada como se esperaba."
+      - name: Estado del cluster
+        if: always()
+        run: |
+          kubectl -n rpg get all,networkpolicy,configmap,secret,serviceaccount
+          kubectl -n rpg describe deployment rpg-servidor | tail -40
+          kubectl -n rpg logs deployment/rpg-servidor --tail=50 || true

@@ -1,0 +1,31 @@
+# Politicas de red (amenaza A-05/A-08 de docs/seguridad.md).
+#
+# 1. Todo el namespace parte de "denegar todo" en entrada y salida.
+# 2. Al servidor solo se le permite ENTRADA al puerto 8887 (jugadores,
+#    healthcheck y Prometheus). Ningun otro puerto queda expuesto.
+# 3. El servidor no tiene SALIDA: no consume servicios externos, asi que si
+#    alguien lograra ejecutar codigo en el contenedor no podria exfiltrar
+#    datos ni descargar herramientas.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: denegar-todo
+  namespace: rpg
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rpg-servidor-entrada
+  namespace: rpg
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: rpg-servidor
+  policyTypes: ["Ingress"]
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8887
