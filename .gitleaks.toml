@@ -1,0 +1,7 @@
+# Configuracion de Gitleaks (ADR-005). Usa todas las reglas por defecto.
+# No hay excepciones: cualquier secreto en el codigo o en el historial
+# detiene el pipeline (umbral: cero secretos).
+title = "rpg-character-creator"
+
+[extend]
+useDefault = true
