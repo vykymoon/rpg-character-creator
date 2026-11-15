@@ -57,8 +57,10 @@ public class GameApp extends Application {
         CharacterLoader.Info hero = pickCharacter();
         if (hero == null) { Platform.exit(); return; }
 
-        String url = ask("Servidor", "URL del servidor:", "ws://localhost:8887");
+        String url = ask("Servidor", "URL del servidor (ws:// en LAN, wss:// en la nube):", "ws://localhost:8887");
         if (url == null) { Platform.exit(); return; }
+        // Codigo de sala (JOIN_CODE del servidor). Vacio en una partida LAN abierta.
+        String joinCode = ask("Sala", "Codigo de sala (deje vacio si el servidor no lo pide):", "");
 
         playerId = hero.name + "#" + (System.currentTimeMillis() % 1000);
 
@@ -79,6 +81,9 @@ public class GameApp extends Application {
         JsonArray items = new JsonArray();
         hero.items.forEach(items::add);
         join.add("items", items);
+        if (joinCode != null && !joinCode.isBlank()) {
+            join.addProperty("code", joinCode.trim());
+        }
         client.send(gson.toJson(join));
 
         canvas = new Canvas(GRID * CELL, GRID * CELL);
@@ -113,7 +118,6 @@ public class GameApp extends Application {
         } else {
             System.err.println("[game] no se encontro el fondo del mapa; se dibuja el color base");
         }
-
 
 
         draw();
@@ -226,10 +230,26 @@ public class GameApp extends Application {
                     players.putAll(fresh);
                     draw();
                 });
+
+            } else if ("error".equals(type)) {
+                // El servidor rechazo algo (codigo de sala, nombre en uso, partida llena...).
+                String code = root.has("code") ? root.get("code").getAsString() : "desconocido";
+                Platform.runLater(() -> new Alert(Alert.AlertType.WARNING,
+                        "El servidor rechazo la accion: " + describeError(code)).show());
             }
         } catch (Exception ex) {
             System.err.println("[ui] mensaje invalido: " + ex.getMessage());
         }
+    }
+
+    private static String describeError(String code) {
+        return switch (code) {
+            case "invalid_code" -> "codigo de sala incorrecto.";
+            case "player_id_in_use" -> "ya hay un jugador con ese nombre en la partida.";
+            case "server_full" -> "la partida esta llena.";
+            case "not_joined" -> "aun no te has unido a la partida.";
+            default -> code;
+        };
     }
 
     private void move(int dx, int dy) {
