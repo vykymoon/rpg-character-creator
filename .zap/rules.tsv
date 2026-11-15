@@ -1,0 +1,6 @@
+# Reglas de ZAP baseline (DAST, bonificacion del Corte 3).
+# Formato: <id-regla>	<IGNORE|INFO|WARN|FAIL>	<justificacion>
+# Por defecto toda alerta WARN detiene el pipeline (fail_action: true).
+# Solo se relaja una regla con su justificacion aqui y en docs/seguridad.md.
+10049	IGNORE	(Contenido almacenable / no almacenable) Informativa: /health y /metrics devuelven Cache-Control no-store a proposito.
+10104	IGNORE	(User Agent Fuzzer) Informativa: el servidor no varia su respuesta segun el agente; no aplica a una API sin sesiones web.

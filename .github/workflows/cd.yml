@@ -4,7 +4,7 @@
 # tag de version vX.Y.Z recorre este pipeline sin pasos manuales:
 #
 #   CI completa -> imagen en GHCR (sha + version) -> despliegue en Render
-#   -> prueba de humo -> prueba de carga con el SLO
+#   -> prueba de humo -> prueba de carga con el SLO -> DAST (OWASP ZAP)
 #
 # Si una etapa falla, las siguientes no corren y la ejecucion queda en rojo.
 name: CD
@@ -162,3 +162,25 @@ jobs:
           name: reporte-carga
           path: perf-results/
 
+  dast:
+    name: Seguridad - DAST (OWASP ZAP)
+    needs: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      # Baseline scan pasivo contra el entorno desplegado. fail_action hace que
+      # cualquier alerta WARN o FAIL que no este tratada en .zap/rules.tsv
+      # detenga el pipeline (docs/seguridad.md, seccion DAST).
+      - name: ZAP baseline
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: ${{ vars.APP_URL }}
+          rules_file_name: .zap/rules.tsv
+          cmd_options: '-a -j'
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: reporte-dast
