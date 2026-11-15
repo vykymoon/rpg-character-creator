@@ -80,7 +80,17 @@ Se abrió un pull request que introduce a propósito tres problemas:
 
 El pipeline lo bloquea en los checks **Seguridad - dependencias (SCA)**, **Seguridad - revisión de dependencias del PR**, **Seguridad - detección de secretos** y **Reglas de arquitectura**. El PR se cerró **sin fusionar** y la rama se borró, de modo que la llave falsa nunca llegó al historial de `main`.
 
-- PR bloqueado: _(enlace al PR cerrado; ver sección 6 de docs/devops.md)_
+- **PR bloqueado:** [#3 — [DEMO - NO FUSIONAR] PR que los controles de seguridad deben bloquear](https://github.com/vykymoon/rpg-character-creator/pull/3). Está cerrado sin fusionar y su rama fue borrada.
+- **Ejecución que lo bloqueó:** [Actions run 43743868255](https://github.com/vykymoon/rpg-character-creator/actions/runs/43743868255).
+
+| Check | Resultado en el PR #3 | Qué detectó |
+|---|---|---|
+| Seguridad - dependencias (SCA) | ❌ | Trivy: `log4j-core 2.14.1`, CVE-2021-44228 (crítica, corregida en 2.15.0+) |
+| Seguridad - revisión de dependencias del PR | ❌ | dependency-review-action: la misma dependencia nueva con CVE crítico |
+| Seguridad - detección de secretos | ❌ | Gitleaks, regla `aws-access-token` en `config-ejemplo.properties` |
+| Reglas de arquitectura | ❌ | ArchUnit `dominio_no_depende_de_infraestructura`: `domain.AtajoDeRed` depende de `io.javalin.Javalin` |
+| Imagen Docker y escaneo | ❌ | Trivy image: el `log4j-core` vulnerable también quedó dentro de la imagen |
+| Construcción, unitarias, integración y SAST | ✅ | El código compila y las pruebas pasan: lo que bloquea son las reglas, no un error de compilación |
 
 ## 6. Qué queda abierto
 
