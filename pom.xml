@@ -69,6 +69,14 @@
             <version>2.0.17</version>
         </dependency>
 
+        <!-- DEMO (no fusionar): dependencia con vulnerabilidad critica conocida
+             (CVE-2021-44228, Log4Shell) para comprobar que SCA bloquea el PR. -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.14.1</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
