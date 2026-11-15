@@ -90,14 +90,42 @@ Los diagramas C4 del multijugador (contexto, contenedores y componentes del serv
 
 El diagrama de clases del creador de personajes está en [`diagramas/UML.png`](diagramas/UML.png). Muestra los siete paquetes del Corte 1 y las dependencias entre ellos.
 
+## Corte 3: la arquitectura verificada y desplegada
+
+En el Corte 3 la arquitectura no cambió de estilo: se volvió verificable en cada cambio y se desplegó.
+
+- **Fronteras como pruebas.** `ArchitectureTest` (ArchUnit) convierte en reglas automáticas las fronteras de los ADR:
+  - el dominio solo depende del JDK;
+  - el caso de uso no conoce el transporte;
+  - el servidor no depende de JavaFX;
+  - la UI no conoce `CharacterDAOJson`;
+  - el modelo no depende de las capas superiores.
+
+  Corren en la etapa *Reglas de arquitectura* del pipeline y lo detienen ([docs/devops.md](devops.md)).
+- **Cambio de adaptador sin tocar el núcleo.** El servidor pasó de Java-WebSocket a Javalin para servir HTTP (`/health`, `/metrics`) y WebSocket en un solo puerto ([ADR-006](adr/ADR-006-adaptador-http-websocket.md)). Solo cambió `adapters/server`.
+- **Despliegue.** El servidor corre en un contenedor en Render, publicado y desplegado por el pipeline ([ADR-004](adr/ADR-004-estrategia-de-despliegue.md)). La vista de despliegue está en [`diagramas/despliegue.md`](diagramas/despliegue.md).
+- **Seguridad en el adaptador.** La identidad del jugador queda atada a la conexión, con código de sala y límites anti-flood ([docs/seguridad.md](seguridad.md)).
+
+```mermaid
+flowchart LR
+    CLI["Cliente JavaFX<br/>adapters/client"] -->|wss / ws| SRV
+    subgraph SERVIDOR["Contenedor rpg-servidor"]
+        SRV["adapters/server<br/>GameServer (Javalin)<br/>/ws · /health · /metrics"]
+        APP["application<br/>GameSessionService"]
+        DOM["domain<br/>MovementRules · GameMap"]
+        SRV --> APP --> DOM
+    end
+```
+
 ## Límites conocidos del diseño
 
-El servidor acepta cualquier casilla caminable como destino, sin comprobar que sea vecina de la posición actual. Un cliente modificado puede recorrer el mapa de un mensaje. Hay una prueba escrita y desactivada que lo documenta.
+Los límites del Corte 2 y su estado en el Corte 3 (detalle en [docs/evolucion.md](evolucion.md)):
 
-El servidor también crea al jugador si recibe un `move` de alguien que nunca hizo `join`. Misma situación: prueba escrita y desactivada.
-
-El estado completo se difunde a todos en cada movimiento. Con pocos jugadores no importa; las mediciones muestran que el sistema se cae entre 32 y 48 jugadores por el volumen de tráfico, no por la CPU. Ver [`docs/pruebas.md`](pruebas.md).
-
-`GameClient` y `ClientMain` declaran el paquete `com.proyecto.rpg.adapters.client` pero los archivos están en `adapters/server/client/`. Compila porque Maven le pasa la lista de archivos a `javac`, pero la carpeta y el paquete no coinciden, y cualquier herramienta que recorra el árbol por paquetes se confunde. Mover los dos archivos a `adapters/client/` lo arregla sin tocar código.
-
-`CatalogManager` cachea el catálogo al arrancar. Si alguien edita un JSON con la aplicación abierta, los cambios no se ven hasta reiniciar.
+| Límite del Corte 2 | Estado en el Corte 3 |
+|---|---|
+| El servidor aceptaba cualquier casilla caminable como destino | **Resuelto:** `MovementRules.isValidStep` exige una casilla vecina |
+| El servidor creaba al jugador con un `move` sin `join` | **Resuelto:** se rechaza con `not_joined` |
+| Se difunde el estado completo a todos en cada movimiento; colapso entre 32 y 48 jugadores | **Se mantiene:** cupo `MAX_PLAYERS=32` por defecto; enviar deltas queda como trabajo futuro |
+| `GameClient` y `ClientMain` estaban en una carpeta que no correspondía a su paquete | **Resuelto:** movidos a `adapters/client/` |
+| `CatalogManager` cachea el catálogo al arrancar | **Riesgo aceptado:** el catálogo viaja con cada versión del cliente |
+| Si el anfitrión cerraba la aplicación, la partida terminaba | **Mitigado:** el servidor corre en la nube; sigue siendo una sola instancia con estado en memoria |

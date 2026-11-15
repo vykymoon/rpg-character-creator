@@ -66,3 +66,10 @@ El servidor no comprueba que el destino de un movimiento sea una casilla vecina 
 El servidor crea al jugador si recibe un `move` de alguien que nunca hizo `join`.
 
 Las dos cosas tienen una prueba escrita y desactivada en `GameSessionServiceTest`, que se activa quitando la anotación cuando se corrija `GameSessionService.move()`.
+
+## Actualización del Corte 3
+
+- Los dos pendientes se corrigieron en `GameSessionService.move()` y sus pruebas ya no están desactivadas ([docs/evolucion.md](../evolucion.md), P1 y P2).
+- El adaptador WebSocket se reemplazó por Javalin sin tocar el dominio ni el caso de uso ([ADR-006](ADR-006-adaptador-http-websocket.md)). Las fronteras de esta decisión ahora son reglas de ArchUnit que corren en el pipeline.
+- El servidor ya no lo corre el jugador anfitrión: se despliega en Render ([ADR-004](ADR-004-estrategia-de-despliegue.md)). El SLO de este ADR es el *threshold* de la prueba de carga que corre después de cada despliegue.
+
