@@ -3,7 +3,6 @@ package com.proyecto.rpg.application;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -117,6 +116,7 @@ class GameSessionServiceTest {
     @DisplayName("Unirse dos veces no duplica al jugador ni lo devuelve al inicio")
     void joinDosVecesNoDuplicaAlJugador() {
         session.join("p1");
+        session.move("p1", 3, 3);
         session.move("p1", 4, 4);
 
         session.join("p1", "Aerin", "elfo", "mago", List.of());
@@ -139,14 +139,12 @@ class GameSessionServiceTest {
     }
 
     // ------------------------------------------------------------------
-    // Comportamiento que un servidor autoritativo deberia tener y el
-    // codigo todavia no cumple. Estan escritas y desactivadas a proposito:
-    // documentan la deuda y se activan quitando @Disabled cuando se
-    // corrija GameSessionService.move(). Ver docs/pruebas.md.
+    // Pendientes del Corte 2, ya corregidos en GameSessionService.move().
+    // En el Corte 2 estaban escritas con @Disabled para documentar la deuda;
+    // ahora corren en el pipeline y lo detienen si alguien la reintroduce.
     // ------------------------------------------------------------------
 
     @Test
-    @Disabled("Pendiente: move() acepta saltar a cualquier casilla caminable, no solo a una vecina")
     @DisplayName("El servidor rechaza saltos a casillas no vecinas")
     void elServidorRechazaSaltosNoAdyacentes() {
         session.join("p1");
@@ -154,14 +152,43 @@ class GameSessionServiceTest {
         // (2,2) -> (4,4) son dos casillas en diagonal: un cliente modificado
         // podria teletransportarse por todo el mapa de un solo mensaje.
         assertFalse(session.move("p1", 4, 4));
+
+        JsonObject p1 = jugador("p1");
+        assertEquals(SPAWN_X, p1.get("x").getAsInt());
+        assertEquals(SPAWN_Y, p1.get("y").getAsInt());
     }
 
     @Test
-    @Disabled("Pendiente: move() crea al jugador aunque nunca haya hecho join")
     @DisplayName("Moverse sin haberse unido no crea al jugador")
     void moverSinHaberseUnidoNoCreaAlJugador() {
-        session.move("fantasma", 3, 3);
+        assertFalse(session.move("fantasma", 3, 3));
 
         assertFalse(jugadores().has("fantasma"));
+    }
+
+    @Test
+    @DisplayName("Con la partida llena, un jugador nuevo no puede unirse")
+    void conLaPartidaLlenaUnJugadorNuevoNoPuedeUnirse() {
+        GameSessionService llena = new GameSessionService(1);
+
+        assertTrue(llena.join("p1"));
+        assertFalse(llena.join("p2"));
+        assertEquals(1, llena.playerCount());
+        // Quien ya estaba puede volver a unirse (reconexion).
+        assertTrue(llena.join("p1"));
+    }
+
+    @Test
+    @DisplayName("Un identificador vacio no se registra")
+    void unIdentificadorVacioNoSeRegistra() {
+        assertFalse(session.join(" "));
+        assertFalse(session.isJoined(" "));
+    }
+
+    @Test
+    @DisplayName("Un limite de jugadores menor que uno es un error de configuracion")
+    void unLimiteMenorQueUnoEsUnError() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new GameSessionService(0));
     }
 }

@@ -8,7 +8,7 @@ public class ClientMain {
         String url = args.length > 0 ? args[0] : "ws://localhost:8887";
         String playerId = args.length > 1 ? args[1] : "player-" + (System.currentTimeMillis() % 1000);
 
-        com.proyecto.rpg.adapters.client.GameClient client = new com.proyecto.rpg.adapters.client.GameClient(new URI(url));
+        GameClient client = new GameClient(new URI(url));
         client.connectBlocking();
         client.send("{\"type\":\"join\",\"playerId\":\"" + playerId + "\"}");
 
