@@ -1,0 +1,10 @@
+# RBAC minimo (docs/k8s): el servidor no necesita hablar con la API de
+# Kubernetes, asi que usa una ServiceAccount propia sin ningun Role y sin
+# token montado. Si el contenedor se viera comprometido, no tendria
+# credenciales para listar secretos ni crear pods.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rpg-servidor
+  namespace: rpg
+automountServiceAccountToken: false

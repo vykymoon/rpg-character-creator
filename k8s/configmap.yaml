@@ -1,0 +1,11 @@
+# Configuracion no sensible del servidor. Los nombres son los de .env.example.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rpg-servidor-config
+  namespace: rpg
+data:
+  PORT: "8887"
+  MAX_PLAYERS: "32"
+  MAX_MESSAGES_PER_SECOND: "20"
+  MAX_MESSAGE_BYTES: "4096"
