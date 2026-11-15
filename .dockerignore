@@ -1,3 +1,4 @@
+# Solo pom.xml y src/ entran al contexto de construccion.
 target/
 .git/
 .github/
@@ -8,8 +9,14 @@ out/
 *.md
 docs/
 perf/
+k8s/
+observabilidad/
+.zap/
 UML.png
+*.patch
 .env
 .env.*
+!.env.example
 docker-compose*.yml
 src/main/resources/data/characters.json
+src/main/resources/sprites/map/*.png
