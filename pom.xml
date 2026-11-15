@@ -15,6 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>21.0.2</javafx.version>
         <mainClass>com.proyecto.rpg.ui.MainApp</mainClass>
+        <javalin.version>7.2.4</javalin.version>
     </properties>
 
     <dependencies>
@@ -47,6 +48,20 @@
             <groupId>org.java-websocket</groupId>
             <artifactId>Java-WebSocket</artifactId>
             <version>1.5.6</version>
+        </dependency>
+
+        <!-- Servidor HTTP + WebSocket en un solo puerto (ADR-006): healthcheck,
+             metricas y WebSocket del juego. Reemplaza al WebSocketServer de
+             Java-WebSocket en el adaptador del servidor. -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>${javalin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.17</version>
         </dependency>
 
         <!-- Testing -->
