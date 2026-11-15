@@ -1,7 +1,7 @@
 package com.proyecto.rpg.ui;
 
 import com.proyecto.rpg.dao.CharacterDAO;
-import com.proyecto.rpg.dao.CharacterDAOJson;
+import com.proyecto.rpg.dao.CharacterDAOProvider;
 import com.proyecto.rpg.model.Character;
 import com.proyecto.rpg.prototype.CharacterPrototype;
 import javafx.collections.FXCollections;
@@ -26,7 +26,7 @@ public class TemplateGalleryController {
     private TextField newNameField;
 
     private final CharacterPrototype prototype = CharacterPrototype.withDefaultTemplates();
-    private final CharacterDAO characterDAO = new CharacterDAOJson();
+    private final CharacterDAO characterDAO = CharacterDAOProvider.get();
 
     @FXML
     public void initialize() {
