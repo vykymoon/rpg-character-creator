@@ -1,0 +1,22 @@
+# Mantiene al dia las dependencias (no reemplaza el control SCA de ci.yml).
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      pruebas:
+        patterns: ["org.junit*", "com.tngtech.archunit*"]
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      acciones:
+        patterns: ["*"]

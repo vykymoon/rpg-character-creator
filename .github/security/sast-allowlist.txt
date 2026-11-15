@@ -1,0 +1,3 @@
+# Hallazgos de SAST tratados como falso positivo o riesgo aceptado.
+# Formato: <ruleId> <ruta/del/archivo>  # justificacion (ver docs/seguridad.md)
+# Vacio: no hay excepciones.
