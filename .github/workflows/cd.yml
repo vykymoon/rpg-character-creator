@@ -1,0 +1,164 @@
+# Entrega y despliegue continuo (Corte 3, secciones 3.2 y 5).
+#
+# Cada cambio que llega a main (siempre por pull request, ver ruleset) y cada
+# tag de version vX.Y.Z recorre este pipeline sin pasos manuales:
+#
+#   CI completa -> imagen en GHCR (sha + version) -> despliegue en Render
+#   -> prueba de humo -> prueba de carga con el SLO
+#
+# Si una etapa falla, las siguientes no corren y la ejecucion queda en rojo.
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/rpg-servidor
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+      pull-requests: write
+
+  publish:
+    name: Publicar imagen en GHCR
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.ref.outputs.image }}
+      version: ${{ steps.ref.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Etiquetas: siempre el SHA del commit; ademas la version semantica
+      # cuando el pipeline lo dispara un tag. Nunca solo "latest".
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          flavor: latest=false
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          labels: |
+            org.opencontainers.image.title=rpg-servidor
+            org.opencontainers.image.description=Servidor autoritativo del multijugador de RPG Character Creator
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: APP_VERSION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+      - id: ref
+        run: |
+          echo "image=${IMAGE_NAME}:sha-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "version=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Imagen publicada: \`${IMAGE_NAME}:sha-${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Desplegar en Render
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Desplegar la imagen del commit
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+        run: bash scripts/render-deploy.sh "$IMAGE"
+      # El plan gratuito de Render suspende el servicio por inactividad y tarda
+      # en arrancar la version nueva: se espera a que /health responda con el
+      # SHA desplegado antes de seguir.
+      - name: Esperar a que responda la version nueva
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          EXPECTED_VERSION: ${{ needs.publish.outputs.version }}
+        run: bash scripts/wait-for-health.sh "$APP_URL" "$EXPECTED_VERSION" 600
+
+  smoke:
+    name: Prueba de humo
+    needs: [publish, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: grafana/setup-k6-action@v1
+      - name: Flujo principal contra el entorno desplegado
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          JOIN_CODE: ${{ secrets.JOIN_CODE }}
+          EXPECTED_VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          WS_URL="$(echo "$APP_URL" | sed -e 's#^https://#wss://#' -e 's#^http://#ws://#')/ws"
+          k6 run --env HTTP_URL="$APP_URL" --env WS_URL="$WS_URL" \
+                 --env JOIN_CODE="$JOIN_CODE" --env EXPECTED_VERSION="$EXPECTED_VERSION" \
+                 --summary-export=smoke-summary.json perf/scripts/smoke_k6.js
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reporte-humo
+          path: smoke-summary.json
+
+  load:
+    name: Prueba de carga (SLO)
+    needs: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: grafana/setup-k6-action@v1
+      # SLO del ADR-001 como thresholds del script: p95 de move_latency < 150 ms
+      # y menos de 1 % de movimientos sin confirmar. Carga corta: 8 jugadores
+      # durante 1 minuto (el escenario "oficial-carga" del Corte 2, acortado).
+      - name: k6 contra el entorno desplegado
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          JOIN_CODE: ${{ secrets.JOIN_CODE }}
+        run: |
+          mkdir -p perf-results
+          WS_URL="$(echo "$APP_URL" | sed -e 's#^https://#wss://#' -e 's#^http://#ws://#')/ws"
+          k6 run --env BASE_URL="$WS_URL" --env JOIN_CODE="$JOIN_CODE" \
+                 --env PLAYERS=8 --env DURATION=1m --env LABEL=pipeline-carga \
+                 --env SUMMARY_DIR=perf-results perf/scripts/lan_ws_k6.js
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reporte-carga
+          path: perf-results/
+

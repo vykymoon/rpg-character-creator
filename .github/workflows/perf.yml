@@ -1,0 +1,61 @@
+# Prueba de carga larga (Corte 3, seccion 3.2).
+#
+# No corre en cada push: se lanza a mano (workflow_dispatch) o cada lunes.
+# Repite contra el entorno desplegado los escenarios del Corte 2 con los
+# mismos thresholds del SLO. Los resumenes quedan como artefacto.
+name: Carga larga
+
+on:
+  workflow_dispatch:
+    inputs:
+      players:
+        description: 'Jugadores simultaneos'
+        default: '8'
+        required: true
+      duration:
+        description: 'Duracion (k6), ej. 3m'
+        default: '3m'
+        required: true
+      interval_ms:
+        description: 'Milisegundos entre movimientos'
+        default: '200'
+        required: true
+  schedule:
+    - cron: '17 12 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-production
+  cancel-in-progress: false
+
+jobs:
+  load:
+    name: k6 ${{ inputs.players || '8' }} jugadores, ${{ inputs.duration || '3m' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: grafana/setup-k6-action@v1
+      - name: Despertar el servicio
+        run: bash scripts/wait-for-health.sh "${{ vars.APP_URL }}" "" 300
+      - name: Escenario de carga
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          JOIN_CODE: ${{ secrets.JOIN_CODE }}
+        run: |
+          mkdir -p perf-results
+          WS_URL="$(echo "$APP_URL" | sed -e 's#^https://#wss://#' -e 's#^http://#ws://#')/ws"
+          k6 run --env BASE_URL="$WS_URL" --env JOIN_CODE="$JOIN_CODE" \
+                 --env PLAYERS="${{ inputs.players || '8' }}" \
+                 --env DURATION="${{ inputs.duration || '3m' }}" \
+                 --env INTERVAL_MS="${{ inputs.interval_ms || '200' }}" \
+                 --env LABEL="larga-${{ inputs.players || '8' }}" \
+                 --env SUMMARY_DIR=perf-results perf/scripts/lan_ws_k6.js
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reporte-carga-larga
+          path: perf-results/

@@ -1,0 +1,84 @@
+# Publicacion de versiones (Corte 3: versionado semantico y cliente).
+#
+# Al empujar un tag vX.Y.Z:
+#   - se compila el cliente de escritorio (JavaFX) en Windows, Linux y macOS,
+#     porque JavaFX trae librerias nativas por sistema operativo;
+#   - se crea el GitHub Release con las notas de esa version tomadas de
+#     CHANGELOG.md y los tres .jar adjuntos.
+# La imagen del servidor con la etiqueta de version la publica cd.yml con el
+# mismo tag.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  client:
+    name: Cliente (${{ matrix.os }})
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux
+          - os: windows-latest
+            label: windows
+          - os: macos-latest
+            label: macos
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Empaquetar el cliente
+        shell: bash
+        run: mvn -B -ntp -Pcliente package -DskipTests
+      - name: Renombrar por sistema operativo
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mv "target/rpg-cliente-${VERSION}.jar" "rpg-cliente-${VERSION}-${{ matrix.label }}.jar"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cliente-${{ matrix.label }}
+          path: rpg-cliente-*.jar
+
+  release:
+    name: GitHub Release
+    needs: client
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: cliente-*
+          merge-multiple: true
+          path: dist
+      - name: Notas de la version desde CHANGELOG.md
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" {found=1; next}
+            found && /^## \[/ {exit}
+            found {print}
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md || echo "Version ${VERSION}. Ver CHANGELOG.md." > release-notes.md
+          cat >> release-notes.md <<NOTES
+
+          ### Descargas
+          - Cliente de escritorio: el \`.jar\` de tu sistema operativo (requiere Java 17+). Ejecutar con \`java -jar rpg-cliente-${VERSION}-<so>.jar\` (creador) o agregar \`--jugar\` (partida).
+          - Servidor: \`ghcr.io/${{ github.repository_owner }}/rpg-servidor:${VERSION}\`
+          NOTES
+      - uses: softprops/action-gh-release@v3
+        with:
+          body_path: release-notes.md
+          files: dist/*.jar
+          fail_on_unmatched_files: true
