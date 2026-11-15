@@ -1,5 +1,7 @@
 # Levanta el sistema completo con un solo comando:
 #   cp .env.example .env && docker compose up --build
+# Con el tablero de observabilidad (Prometheus + Grafana):
+#   docker compose --profile observabilidad up --build
 name: rpg
 
 services:
@@ -27,3 +29,32 @@ services:
     cap_drop:
       - ALL
 
+  prometheus:
+    profiles: ["observabilidad"]
+    image: prom/prometheus:v3.16.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./observabilidad/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observabilidad/prometheus/alertas.yml:/etc/prometheus/alertas.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      servidor:
+        condition: service_healthy
+
+  grafana:
+    profiles: ["observabilidad"]
+    image: grafana/grafana:12.4.15
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?defina GRAFANA_ADMIN_PASSWORD en .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observabilidad/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observabilidad/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
