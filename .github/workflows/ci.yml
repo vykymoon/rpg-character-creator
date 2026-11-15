@@ -1,0 +1,110 @@
+# Integracion continua (Corte 3, seccion 2).
+#
+# Corre en cada push a una rama y en cada pull request. En main la llama
+# cd.yml como primera etapa, asi un despliegue nunca ocurre sin que pasen
+# antes todas las verificaciones. Cada job es un check del pull request y
+# los checks son obligatorios en el ruleset de main.
+name: CI
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  MAVEN_ARGS: -B -ntp
+
+jobs:
+  build:
+    name: Construccion
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Compilar codigo y pruebas
+        run: mvn $MAVEN_ARGS test-compile
+
+  unit:
+    name: Pruebas unitarias y cobertura
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      # jacoco:check corre en la fase test y rompe la construccion si la
+      # cobertura de lineas de domain + application baja del umbral del pom.
+      - name: Pruebas unitarias con umbral de cobertura del dominio
+        run: mvn $MAVEN_ARGS test -Dtest='!ArchitectureTest' -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Resumen de cobertura
+        if: always()
+        run: python3 .github/scripts/coverage_summary.py target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+      - name: Publicar reportes
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reportes-pruebas-unitarias
+          path: |
+            target/surefire-reports/
+            target/site/jacoco/
+          if-no-files-found: warn
+
+  architecture:
+    name: Reglas de arquitectura
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: ArchUnit (fitness functions de los ADR)
+        run: mvn $MAVEN_ARGS test -Dtest=ArchitectureTest -Djacoco.skip=true
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reporte-arquitectura
+          path: target/surefire-reports/
+          if-no-files-found: warn
+
+  integration:
+    name: Pruebas de integracion
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      # Solo Failsafe (*IT): las unitarias ya corrieron en su propio job.
+      - name: Servidor real y clientes WebSocket reales
+        run: mvn $MAVEN_ARGS verify -Djacoco.skip=true -Dtest=NingunaUnitaria -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Publicar reportes
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reportes-pruebas-integracion
+          path: target/failsafe-reports/
+          if-no-files-found: warn
+
