@@ -1,0 +1,31 @@
+# Reglas ligadas al SLO del ADR-001 (p95 < 150 ms, error < 1 %).
+groups:
+  - name: slo-movimiento
+    rules:
+      - record: rpg:move_latency_p95_seconds
+        expr: histogram_quantile(0.95, sum by (le) (rate(rpg_move_duration_seconds_bucket[1m])))
+      - record: rpg:move_error_ratio
+        expr: |
+          sum(rate(rpg_moves_total{result=~"error|not_joined|spoofed"}[1m]))
+            / clamp_min(sum(rate(rpg_moves_total[1m])), 1e-9)
+      - alert: SLOLatenciaMovimiento
+        expr: rpg:move_latency_p95_seconds > 0.15
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "p95 de movimiento por encima de 150 ms (SLO del ADR-001)"
+      - alert: SLOErroresMovimiento
+        expr: rpg:move_error_ratio > 0.01
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "Mas del 1 % de movimientos con error (SLO del ADR-001)"
+      - alert: ServidorCaido
+        expr: up{job="rpg-servidor"} == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Prometheus no puede leer /metrics del servidor"
