@@ -1,14 +1,29 @@
+# Levanta el sistema completo con un solo comando:
+#   cp .env.example .env && docker compose up --build
 name: rpg
 
 services:
   servidor:
-    build: .
-    image: rpg-servidor:dev
+    build:
+      context: .
+      args:
+        APP_VERSION: ${APP_VERSION:-local}
+    image: rpg-servidor:local
+    env_file: .env
     ports:
-      - "${SERVER_PORT:-8887}:${SERVER_PORT:-8887}"
-    environment:
-      # La usa el HEALTHCHECK de la imagen para saber en que puerto comprobar
-      SERVER_PORT: ${SERVER_PORT:-8887}
-    # Argumento del ServerMain: el puerto en el que escucha
-    command: ["${SERVER_PORT:-8887}"]
+      - "${PORT:-8887}:${PORT:-8887}"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/$${PORT} && printf \"GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && head -1 <&3 | grep -q \" 200\"'"]
+      interval: 10s
+      timeout: 3s
+      start_period: 20s
+      retries: 5
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+

@@ -1,36 +1,51 @@
-# syntax=docker/dockerfile:1
-
-# Etapa 1: compilar con Maven y reunir las dependencias de ejecucion
-# (el proyecto compila para Java 17 con <release>17</release>; el JDK 21 lo soporta sin problema)
-FROM maven:3.9.16-eclipse-temurin-21-noble AS build
+# syntax=docker/dockerfile:1.7
+#
+# Imagen del servidor de partida (Corte 3). El cliente JavaFX no va en la
+# imagen: se publica como .jar en GitHub Releases (release.yml).
+#
+# Etapa 1: compilar con Maven y reunir las dependencias de ejecucion.
+# Las imagenes base tienen version exacta (nunca latest) y Dependabot abre
+# un PR cuando sale una nueva (.github/dependabot.yml).
+FROM maven:3.10.0-eclipse-temurin-21-noble AS build
 WORKDIR /src
 COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -q dependency:go-offline
 COPY src ./src
-# Las pruebas se ejecutan en CI, no al construir la imagen.
-# El servidor no usa JavaFX, asi que se excluye de las librerias copiadas.
+# Las pruebas corren en el pipeline (ci.yml), no al construir la imagen.
+# El servidor no usa JavaFX: se excluye de las librerias copiadas, lo que
+# ademas reduce la superficie que escanea Trivy.
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -q package -DskipTests \
  && mvn -B -ntp -q dependency:copy-dependencies \
       -DoutputDirectory=/libs -DincludeScope=runtime -DexcludeGroupIds=org.openjfx \
  && cp target/rpg-character-creator-*.jar /libs/
 
-# Etapa 2: imagen final solo con el JRE, el .jar y sus librerias
-FROM eclipse-temurin:21.0.12.1_1-jre-noble
-RUN groupadd --system app && useradd --system --gid app --no-create-home app
+# Etapa 2: solo el JRE, el .jar y sus librerias.
+FROM eclipse-temurin:21.0.13_9-jre-noble
+# Parches de seguridad del sistema operativo al construir: el escaneo de la
+# imagen (Trivy) falla si queda una vulnerabilidad critica o alta con
+# correccion disponible.
+RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd --system --gid 10001 app \
+ && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app
 WORKDIR /app
 COPY --from=build --chown=app:app /libs /app/libs
-USER app
 
-# Puerto por defecto del servidor WebSocket (se puede cambiar con SERVER_PORT en el compose)
-ENV SERVER_PORT=8887
+# Version desplegada: el pipeline pasa el SHA del commit y /health la expone,
+# asi la prueba de humo confirma que respondio la version nueva.
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION} \
+    PORT=8887 \
+    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -Dorg.slf4j.simpleLogger.defaultLogLevel=info"
+
+# Proceso sin privilegios de root.
+USER 10001:10001
 EXPOSE 8887
 
-# El servidor no tiene endpoint HTTP: se comprueba que el puerto acepte conexiones TCP
-HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-  CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/${SERVER_PORT}' || exit 1
+# Healthcheck HTTP contra /health en el mismo puerto del WebSocket. Usa bash
+# y /dev/tcp para no instalar curl en la imagen.
+HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
+  CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/${PORT} && printf "GET /health HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && head -1 <&3 | grep -q " 200"' || exit 1
 
-# La JVM usa como maximo el 75 % de la memoria que el contenedor tenga asignada.
-# "/app/libs/*" incluye el .jar del proyecto y sus dependencias (gson, Java-WebSocket).
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-cp", "/app/libs/*", "com.proyecto.rpg.adapters.server.ServerMain"]
-# Argumento por defecto: el puerto
-CMD ["8887"]
+ENTRYPOINT ["java", "-cp", "/app/libs/*", "com.proyecto.rpg.adapters.server.ServerMain"]
