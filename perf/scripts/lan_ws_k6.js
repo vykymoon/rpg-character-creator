@@ -16,6 +16,12 @@ import { Trend, Counter, Rate } from 'k6/metrics';
 //   INTERVAL_MS  milisegundos entre movimientos (200)
 //   DURATION     duracion del escenario (1m)
 //   LABEL        nombre de la corrida, va en el nombre del resumen
+//   JOIN_CODE    codigo de sala del servidor desplegado (vacio en LAN)
+//
+// Corte 3: el mismo script corre en el pipeline despues de cada despliegue
+// (cd.yml, etapa "Prueba de carga") contra wss://<servicio>/ws. Los
+// thresholds son el SLO del ADR-001: si no se cumple, k6 termina con codigo
+// distinto de cero y el pipeline falla.
 //
 // Ejemplos:
 //   k6 run --env LABEL=oficial-baseline --env PLAYERS=2  --env DURATION=1m perf/scripts/lan_ws_k6.js
@@ -28,6 +34,8 @@ const PLAYERS = Number(__ENV.PLAYERS || 2);
 const INTERVAL_MS = Number(__ENV.INTERVAL_MS || 200);
 const DURATION = __ENV.DURATION || '1m';
 const LABEL = __ENV.LABEL || `jug-${PLAYERS}`;
+const JOIN_CODE = __ENV.JOIN_CODE || '';
+const SUMMARY_DIR = __ENV.SUMMARY_DIR || 'perf/results';
 
 // Latencia de un movimiento: del move enviado al state que lo confirma.
 const moveLatency = new Trend('move_latency', true);
@@ -43,6 +51,8 @@ export const options = {
     // movimientos sin confirmar.
     move_latency: ['p(95)<150'],
     move_failed: ['rate<0.01'],
+    // Sin conexiones fallidas: un 4401 (codigo de sala) o un 404 tumba la prueba.
+    checks: ['rate==1'],
   },
 };
 
@@ -68,7 +78,11 @@ export default function () {
     let paso = 0;
 
     socket.on('open', function () {
-      socket.send(JSON.stringify({ type: 'join', playerId }));
+      const join = { type: 'join', playerId };
+      if (JOIN_CODE) {
+        join.code = JOIN_CODE;
+      }
+      socket.send(JSON.stringify(join));
     });
 
     socket.on('message', function (raw) {
@@ -136,6 +150,6 @@ export function handleSummary(data) {
   };
   const out = {};
   out.stdout = JSON.stringify(resumen, null, 2);
-  out[`perf/results/summary-${LABEL}.json`] = JSON.stringify(data, null, 2);
+  out[`${SUMMARY_DIR}/summary-${LABEL}.json`] = JSON.stringify(data, null, 2);
   return out;
 }

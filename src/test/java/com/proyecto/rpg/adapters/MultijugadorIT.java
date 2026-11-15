@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.proyecto.rpg.adapters.client.GameClient;
 import com.proyecto.rpg.adapters.server.GameServer;
+import com.proyecto.rpg.adapters.server.ServerConfig;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,9 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -25,6 +29,7 @@ import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -56,10 +61,7 @@ class MultijugadorIT {
     @BeforeEach
     void levantarServidor() throws Exception {
         puerto = puertoLibre();
-        servidor = new GameServer(puerto);
-        // Sin esto, dos pruebas seguidas pueden chocar con el puerto en TIME_WAIT.
-        servidor.setReuseAddr(true);
-        servidor.start();
+        servidor = new GameServer(ServerConfig.lan(puerto)).start();
         esperarAQueEscuche(puerto);
     }
 
@@ -71,7 +73,7 @@ class MultijugadorIT {
             }
         }
         abiertos.clear();
-        servidor.stop(1_000);
+        servidor.stop();
     }
 
     // ------------------------------------------------------------------
@@ -156,6 +158,150 @@ class MultijugadorIT {
 
         esperarEstado(p1, players -> !players.has("p2"),
                 "que p2 desaparezca del estado que ve p1");
+    }
+
+
+    // ------------------------------------------------------------------
+    // Corte 3: controles del modelo de amenazas (docs/seguridad.md)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("A-01: un jugador no puede mover a otro enviando su playerId")
+    void unJugadorNoPuedeMoverAOtro() throws Exception {
+        Cliente p1 = conectar("p1");
+        Cliente p2 = conectar("p2");
+        p1.unirse();
+        p2.unirse();
+        esperarEstado(p1, players -> players.has("p2"), "que p1 vea a p2");
+
+        // p2 intenta mover a p1 suplantando su identificador.
+        p2.ws.send("{\"type\":\"move\",\"playerId\":\"p1\",\"x\":3,\"y\":3}");
+        JsonObject error = esperarMensaje(p2, "error");
+        assertEquals("player_id_mismatch", error.get("code").getAsString());
+
+        // Marca: p1 se mueve de verdad a (3,2); p1 nunca debe haber pasado por (3,3).
+        p1.mover(3, 2);
+        esperarEstado(p2, players -> {
+            JsonObject j = players.getAsJsonObject("p1");
+            assertFalse(j.get("x").getAsInt() == 3 && j.get("y").getAsInt() == 3,
+                    "el servidor dejo que p2 moviera a p1");
+            return j.get("x").getAsInt() == 3 && j.get("y").getAsInt() == 2;
+        }, "que p1 quede en (3,2) movido por si mismo");
+    }
+
+    @Test
+    @DisplayName("A-03: una segunda conexion no puede apropiarse de un jugador ya unido")
+    void unaSegundaConexionNoPuedeApropiarseDeUnJugador() throws Exception {
+        Cliente original = conectar("p1");
+        original.unirse();
+        esperarMensaje(original, "map");
+
+        Cliente impostor = conectar("p1");
+        impostor.unirse();
+
+        JsonObject error = esperarMensaje(impostor, "error");
+        assertEquals("player_id_in_use", error.get("code").getAsString());
+    }
+
+    @Test
+    @DisplayName("A-04: moverse sin haberse unido se rechaza y no crea jugador")
+    void moverseSinUnirseSeRechaza() throws Exception {
+        Cliente fantasma = conectar("fantasma");
+        fantasma.mover(3, 3);
+
+        JsonObject error = esperarMensaje(fantasma, "error");
+        assertEquals("not_joined", error.get("code").getAsString());
+    }
+
+    @Test
+    @DisplayName("A-02: con codigo de sala, un join sin el codigo correcto se rechaza")
+    void conCodigoDeSalaElJoinSinCodigoSeRechaza() throws Exception {
+        int otroPuerto = puertoLibre();
+        GameServer protegido = new GameServer(
+                new ServerConfig(otroPuerto, "sala-secreta", 8, 20, 4096, "test")).start();
+        try {
+            esperarAQueEscuche(otroPuerto);
+
+            Cliente sinCodigo = new Cliente("intruso", otroPuerto);
+            assertTrue(sinCodigo.ws.connectBlocking(ESPERA_MS, TimeUnit.MILLISECONDS));
+            abiertos.add(sinCodigo);
+            sinCodigo.unirse();
+            JsonObject error = esperarMensaje(sinCodigo, "error");
+            assertEquals("invalid_code", error.get("code").getAsString());
+
+            Cliente conCodigo = new Cliente("invitado", otroPuerto);
+            assertTrue(conCodigo.ws.connectBlocking(ESPERA_MS, TimeUnit.MILLISECONDS));
+            abiertos.add(conCodigo);
+            conCodigo.ws.send("{\"type\":\"join\",\"playerId\":\"invitado\",\"code\":\"sala-secreta\"}");
+            JsonObject mapa = esperarMensaje(conCodigo, "map");
+            assertEquals(50, mapa.get("width").getAsInt());
+        } finally {
+            protegido.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("A-05: un cliente que inunda el servidor ve sus mensajes descartados")
+    void unClienteQueInundaElServidorEsLimitado() throws Exception {
+        int otroPuerto = puertoLibre();
+        GameServer limitado = new GameServer(
+                new ServerConfig(otroPuerto, "", 8, 5, 4096, "test")).start();
+        try {
+            esperarAQueEscuche(otroPuerto);
+            Cliente ruidoso = new Cliente("ruidoso", otroPuerto);
+            assertTrue(ruidoso.ws.connectBlocking(ESPERA_MS, TimeUnit.MILLISECONDS));
+            abiertos.add(ruidoso);
+            ruidoso.unirse();
+            esperarMensaje(ruidoso, "map");
+            for (int i = 0; i < 40; i++) {
+                ruidoso.mover(2, 2);
+            }
+            long limite = System.currentTimeMillis() + ESPERA_MS;
+            while (limitado.metrics().droppedCount("rate_limit") == 0
+                    && System.currentTimeMillis() < limite) {
+                Thread.sleep(50);
+            }
+            assertTrue(limitado.metrics().droppedCount("rate_limit") > 0,
+                    "el limite de mensajes por segundo no descarto nada");
+        } finally {
+            limitado.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("El healthcheck HTTP responde UP en el mismo puerto del WebSocket")
+    void elHealthcheckRespondeUp() throws Exception {
+        HttpResponse<String> r = get("/health");
+
+        assertEquals(200, r.statusCode());
+        JsonObject body = JsonParser.parseString(r.body()).getAsJsonObject();
+        assertEquals("UP", body.get("status").getAsString());
+        assertEquals("nosniff", r.headers().firstValue("X-Content-Type-Options").orElse(""));
+        assertFalse(r.headers().firstValue("Server").orElse("").contains("Jetty("),
+                "el servidor no debe anunciar su version");
+    }
+
+    @Test
+    @DisplayName("Las metricas de Prometheus cuentan los movimientos procesados")
+    void lasMetricasCuentanLosMovimientos() throws Exception {
+        Cliente p1 = conectar("p1");
+        p1.unirse();
+        esperarMensaje(p1, "map");
+        p1.mover(3, 3);
+        esperarEstado(p1, players -> enPosicion(players, "p1", 3, 3), "que p1 llegue a (3,3)");
+
+        HttpResponse<String> r = get("/metrics");
+
+        assertEquals(200, r.statusCode());
+        assertTrue(r.body().contains("rpg_moves_total{result=\"accepted\"} 1"), r.body());
+        assertTrue(r.body().contains("rpg_move_duration_seconds_bucket{le=\"0.15\"}"));
+        assertNotNull(r.headers().firstValue("Content-Type").orElse(null));
+    }
+
+    private HttpResponse<String> get(String path) throws Exception {
+        HttpClient http = HttpClient.newHttpClient();
+        HttpRequest req = HttpRequest.newBuilder(URI.create("http://localhost:" + puerto + path)).GET().build();
+        return http.send(req, HttpResponse.BodyHandlers.ofString());
     }
 
     // ------------------------------------------------------------------
