@@ -4,6 +4,9 @@ Todos los cambios relevantes del proyecto. El formato sigue [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Documentación
+- Evidencia de la reversión probada en producción (`docs/devops.md` §5).
+
 ## [1.0.0] - 2026-11-15
 
 Corte 3: entrega continua y segura. Primera versión desplegada automáticamente.
