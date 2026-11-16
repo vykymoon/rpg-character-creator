@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -q package -DskipTests \
  && cp target/rpg-character-creator-*.jar /libs/
 
 # Etapa 2: solo el JRE, el .jar y sus librerias.
-FROM eclipse-temurin:21.0.13_9-jre-noble
+FROM eclipse-temurin:24.0.2_12-jre-noble
 # Parches de seguridad del sistema operativo al construir: el escaneo de la
 # imagen (Trivy) falla si queda una vulnerabilidad critica o alta con
 # correccion disponible.
