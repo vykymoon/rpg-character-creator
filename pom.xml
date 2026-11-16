@@ -16,7 +16,7 @@
         <javafx.version>21.0.2</javafx.version>
         <mainClass>com.proyecto.rpg.ui.MainApp</mainClass>
         <javalin.version>7.2.4</javalin.version>
-        <archunit.version>1.4.1</archunit.version>
+        <archunit.version>1.5.1</archunit.version>
         <jacoco.version>0.8.13</jacoco.version>
         <!-- Umbral de cobertura de lineas del dominio (domain + application).
              El enunciado exige al menos 70 %; ver ADR-005 y docs/devops.md. -->
@@ -73,7 +73,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.10.2</version>
+            <version>6.1.3</version>
             <scope>test</scope>
         </dependency>
         <!-- Reglas de arquitectura como pruebas (fitness functions, Corte 3) -->
