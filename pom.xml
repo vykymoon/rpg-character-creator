@@ -17,7 +17,7 @@
         <mainClass>com.proyecto.rpg.ui.MainApp</mainClass>
         <javalin.version>7.2.4</javalin.version>
         <archunit.version>1.4.1</archunit.version>
-        <jacoco.version>0.8.13</jacoco.version>
+        <jacoco.version>0.8.16</jacoco.version>
         <!-- Umbral de cobertura de lineas del dominio (domain + application).
              El enunciado exige al menos 70 %; ver ADR-005 y docs/devops.md. -->
         <coverage.domain.minimum>0.80</coverage.domain.minimum>
