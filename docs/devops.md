@@ -116,9 +116,12 @@ bash scripts/wait-for-health.sh https://<servicio>.onrender.com
 
 ### Registro de reversiones probadas
 
-| Fecha | De → a | Ejecución | Resultado |
-|---|---|---|---|
-| _(se completa al ejecutar `rollback.yml`)_ | | | |
+| Fecha | De → a | Ejecución | Duración | Resultado |
+|---|---|---|---|---|
+| 2026-11-16 13:31 (UTC-5) | `1.0.0` (`3cb3e67`) → `sha-4e4eaec…` (primer despliegue) | [Rollback #1](https://github.com/vykymoon/rpg-character-creator/actions/runs/43929708424) | 54 s | ✅ `/health` respondió `4e4eaec…` y la prueba de humo pasó |
+| 2026-11-16 13:35 (UTC-5) | `sha-4e4eaec…` → `1.0.0` (versión actual) | [Rollback #2](https://github.com/vykymoon/rpg-character-creator/actions/runs/43930339276) | 59 s | ✅ `/health` respondió `3cb3e67…` y la prueba de humo pasó |
+
+La reversión no reconstruye nada: vuelve a desplegar en Render una imagen que ya está en GHCR y que ya pasó el pipeline. Tarda menos de un minuto.
 
 ## 6. Evidencias para la calificación
 
@@ -130,5 +133,7 @@ bash scripts/wait-for-health.sh https://<servicio>.onrender.com
 | PR aprobado por otro integrante | Pestaña Pull requests (cerrados) |
 | PR bloqueado por los controles de seguridad | Enlazado en [docs/seguridad.md §5](seguridad.md#5-evidencia-de-que-los-controles-bloquean) |
 | Imagen con SHA y versión | Packages → `rpg-servidor` |
-| Reversión ejecutada | Actions → `Rollback`, y la tabla de la sección 5 |
+| Reversión ejecutada | Actions → `Rollback` ([#1](https://github.com/vykymoon/rpg-character-creator/actions/runs/43929708424), [#2](https://github.com/vykymoon/rpg-character-creator/actions/runs/43930339276)), y la tabla de la sección 5 |
+| Primer pipeline de `main` completo en verde | [CD de `3cb3e67`](https://github.com/vykymoon/rpg-character-creator/actions/runs/43926984767) |
+| Versión `v1.0.0` | [Release con el cliente para Windows, Linux y macOS](https://github.com/vykymoon/rpg-character-creator/releases/tag/v1.0.0) y [CD del tag](https://github.com/vykymoon/rpg-character-creator/actions/runs/43928415038) |
 | Versiones y cliente | Releases |
