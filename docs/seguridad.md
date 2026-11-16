@@ -67,6 +67,7 @@ Cada hallazgo lleva una de tres decisiones: **corregido** (con el commit), **fal
 | H-06 | 2026-11-15 | Riesgo de diseño | `/metrics` es público en la URL de Render | Baja | Riesgo aceptado | Solo expone conteos agregados, sin nombres ni IP. Para corregirlo: exigir un token *bearer* (`METRICS_TOKEN`) o publicar `/metrics` solo en la red interna (en Kubernetes ya es solo interno) |
 | H-07 | 2026-11-15 | Riesgo de diseño | El código de sala es compartido por todos los jugadores: no identifica a cada persona | Media | Riesgo aceptado | Suficiente para una partida entre conocidos. Para corregirlo: cuentas con OAuth (GitHub o Google) y un token firmado por jugador |
 | H-08 | 2026-11-15 | Riesgo de diseño | `ws://` sin TLS en el modo LAN | Baja | Riesgo aceptado | Solo dentro de la red local del anfitrión; en la nube el cliente usa `wss://` |
+| H-09 | 2026-11-16 | Configuración del repositorio | `dependency-review-action` fallaba con "Dependency review is not supported": el *Dependency graph* estaba desactivado, así que el control no estaba revisando nada | Media | Corregido | Se activó en *Settings → Advanced Security → Dependency graph*. El check volvió a correr en el PR #2 |
 
 Los hallazgos que reporten las herramientas en las ejecuciones del pipeline se agregan aquí con su enlace a la ejecución de Actions.
 
@@ -78,7 +79,7 @@ Se abrió un pull request que introduce a propósito tres problemas:
 2. una llave de AWS falsa en `src/main/resources/config-ejemplo.properties`;
 3. una clase de `domain` que importa `io.javalin`, para romper la regla de arquitectura.
 
-El pipeline lo bloquea en los checks **Seguridad - dependencias (SCA)**, **Seguridad - revisión de dependencias del PR**, **Seguridad - detección de secretos** y **Reglas de arquitectura**. El PR se cerró **sin fusionar** y la rama se borró, de modo que la llave falsa nunca llegó al historial de `main`.
+El pipeline lo bloquea en los checks **Seguridad - dependencias (SCA)**, **Seguridad - detección de secretos**, **Reglas de arquitectura** e **Imagen Docker y escaneo**. El PR se cerró **sin fusionar** y la rama se borró, de modo que la llave falsa nunca llegó al historial de `main`.
 
 - **PR bloqueado:** [#3 — [DEMO - NO FUSIONAR] PR que los controles de seguridad deben bloquear](https://github.com/vykymoon/rpg-character-creator/pull/3). Está cerrado sin fusionar y su rama fue borrada.
 - **Ejecución que lo bloqueó:** [Actions run 43743868255](https://github.com/vykymoon/rpg-character-creator/actions/runs/43743868255).
@@ -86,7 +87,7 @@ El pipeline lo bloquea en los checks **Seguridad - dependencias (SCA)**, **Segur
 | Check | Resultado en el PR #3 | Qué detectó |
 |---|---|---|
 | Seguridad - dependencias (SCA) | ❌ | Trivy: `log4j-core 2.14.1`, CVE-2021-44228 (crítica, corregida en 2.15.0+) |
-| Seguridad - revisión de dependencias del PR | ❌ | dependency-review-action: la misma dependencia nueva con CVE crítico |
+| Seguridad - revisión de dependencias del PR | ❌ (ver nota) | En el PR #3 falló porque el *Dependency graph* del repositorio estaba desactivado, no por el CVE. Se activó el 16-11-2026 (hallazgo H-09) y desde entonces el check revisa cada PR |
 | Seguridad - detección de secretos | ❌ | Gitleaks, regla `aws-access-token` en `config-ejemplo.properties` |
 | Reglas de arquitectura | ❌ | ArchUnit `dominio_no_depende_de_infraestructura`: `domain.AtajoDeRed` depende de `io.javalin.Javalin` |
 | Imagen Docker y escaneo | ❌ | Trivy image: el `log4j-core` vulnerable también quedó dentro de la imagen |
