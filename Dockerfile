@@ -6,7 +6,7 @@
 # Etapa 1: compilar con Maven y reunir las dependencias de ejecucion.
 # Las imagenes base tienen version exacta (nunca latest) y Dependabot abre
 # un PR cuando sale una nueva (.github/dependabot.yml).
-FROM maven:3.10.0-eclipse-temurin-21-noble AS build
+FROM maven:3-eclipse-temurin-26-noble AS build
 WORKDIR /src
 COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -q dependency:go-offline
