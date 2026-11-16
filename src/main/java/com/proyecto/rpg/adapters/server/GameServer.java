@@ -142,7 +142,8 @@ public class GameServer {
         ctx.header("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
         ctx.header("Cross-Origin-Resource-Policy", "same-origin");
         ctx.header("Cross-Origin-Opener-Policy", "same-origin");
-        ctx.header("Cache-Control", "no-store");
+        ctx.header("Cache-Control", "no-store, no-cache, must-revalidate");
+        ctx.header("Pragma", "no-cache");
         ctx.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     }
 

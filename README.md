@@ -9,7 +9,7 @@ Proyecto de Diseño y Arquitectura de Software. Integrantes: Victor Luna, Nicola
 
 | | |
 |---|---|
-| **Servidor desplegado** | **https://rpg-servidor.onrender.com** · estado en [`/health`](https://rpg-servidor.onrender.com/health) · WebSocket `wss://rpg-servidor.onrender.com/ws` |
+| **Servidor desplegado** | **https://rpg-servidor-qz1m.onrender.com** · estado en [`/health`](https://rpg-servidor-qz1m.onrender.com/health) · WebSocket `wss://rpg-servidor-qz1m.onrender.com/ws` |
 | **Cliente de escritorio** | [Última versión en Releases](https://github.com/vykymoon/rpg-character-creator/releases/latest) (Windows, Linux, macOS) |
 | **Imagen del servidor** | [`ghcr.io/vykymoon/rpg-servidor`](https://github.com/vykymoon/rpg-character-creator/pkgs/container/rpg-servidor) |
 
@@ -52,7 +52,7 @@ java -jar rpg-cliente-<version>-<so>.jar           # creador de personajes
 java -jar rpg-cliente-<version>-<so>.jar --jugar   # partida multijugador
 ```
 
-En la partida, la URL del servidor es `wss://rpg-servidor.onrender.com/ws` (nube) o `ws://<ip-del-anfitrion>:8887` (LAN, con `docker compose up`). Se escribe también el código de sala.
+En la partida, la URL del servidor es `wss://rpg-servidor-qz1m.onrender.com/ws` (nube) o `ws://<ip-del-anfitrion>:8887` (LAN, con `docker compose up`). Se escribe también el código de sala.
 
 ### Desde el código (desarrollo)
 

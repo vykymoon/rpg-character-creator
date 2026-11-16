@@ -4,3 +4,4 @@
 # Solo se relaja una regla con su justificacion aqui y en docs/seguridad.md.
 10049	IGNORE	(Contenido almacenable / no almacenable) Informativa: /health y /metrics devuelven Cache-Control no-store a proposito.
 10104	IGNORE	(User Agent Fuzzer) Informativa: el servidor no varia su respuesta segun el agente; no aplica a una API sin sesiones web.
+90005	IGNORE	(Sec-Fetch-Dest Header is Missing) Falso positivo: revisa las cabeceras de la peticion que envia el propio escaner, no de la respuesta; el servidor no puede corregirlo. Ver docs/seguridad.md H-11.

@@ -146,6 +146,8 @@ jobs:
       # SLO del ADR-001 como thresholds del script: p95 de move_latency < 150 ms
       # y menos de 1 % de movimientos sin confirmar. Carga corta: 8 jugadores
       # durante 1 minuto (el escenario "oficial-carga" del Corte 2, acortado).
+      - name: Confirmar que el servicio responde antes de la carga
+        run: bash scripts/wait-for-health.sh "${{ vars.APP_URL }}" "" 300
       - name: k6 contra el entorno desplegado
         env:
           APP_URL: ${{ vars.APP_URL }}

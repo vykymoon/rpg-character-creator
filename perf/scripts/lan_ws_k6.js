@@ -1,5 +1,5 @@
 import ws from 'k6/ws';
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 import { Trend, Counter, Rate } from 'k6/metrics';
 
 // Prueba de carga del servidor LAN (ADR-001).
@@ -36,6 +36,10 @@ const DURATION = __ENV.DURATION || '1m';
 const LABEL = __ENV.LABEL || `jug-${PLAYERS}`;
 const JOIN_CODE = __ENV.JOIN_CODE || '';
 const SUMMARY_DIR = __ENV.SUMMARY_DIR || 'perf/results';
+// Un movimiento cuenta como "sin confirmar" si el servidor no lo refleja en
+// el estado dentro de este plazo. Ver la nota de medicion en docs/pruebas.md.
+const CONFIRM_TIMEOUT_MS = Number(__ENV.CONFIRM_TIMEOUT_MS || 1000);
+const CONNECT_ATTEMPTS = 3;
 
 // Latencia de un movimiento: del move enviado al state que lo confirma.
 const moveLatency = new Trend('move_latency', true);
@@ -70,58 +74,81 @@ function nextPosition(step) {
 }
 
 export default function () {
-  const playerId = `k6-${__VU}`;
+  const playerId = `k6-${__VU}-${__ITER}`;
+  let res = null;
 
-  const res = ws.connect(BASE_URL, {}, function (socket) {
-    // Movimiento pendiente de confirmacion: {x, y, enviadoEn}.
-    let pendiente = null;
-    let paso = 0;
+  // Hasta 3 intentos de conexion: el proxy de Render puede rechazar un
+  // handshake suelto cuando llegan varios a la vez. Si los 3 fallan, el check
+  // de conexion falla y el threshold "checks" detiene el pipeline.
+  for (let intento = 1; intento <= CONNECT_ATTEMPTS; intento++) {
+    res = ws.connect(BASE_URL, {}, function (socket) {
+      // Movimientos enviados y aun no reflejados en el estado, en orden.
+      const pendientes = [];
+      let paso = 0;
 
-    socket.on('open', function () {
-      const join = { type: 'join', playerId };
-      if (JOIN_CODE) {
-        join.code = JOIN_CODE;
+      function vencer(ahora) {
+        while (pendientes.length && ahora - pendientes[0].enviadoEn > CONFIRM_TIMEOUT_MS) {
+          pendientes.shift();
+          movesOmitted.add(1);
+          moveFailed.add(true);
+        }
       }
-      socket.send(JSON.stringify(join));
-    });
 
-    socket.on('message', function (raw) {
-      let msg;
-      try {
-        msg = JSON.parse(raw);
-      } catch (e) {
-        return;
-      }
-      if (msg.type !== 'state' || pendiente === null) {
-        return;
-      }
-      const yo = msg.players && msg.players[playerId];
-      if (!yo) {
-        return;
-      }
-      // Solo cuenta el state en el que el servidor ya aplico MI movimiento.
-      if (yo.x === pendiente.x && yo.y === pendiente.y) {
-        moveLatency.add(Date.now() - pendiente.enviadoEn);
+      socket.on('open', function () {
+        const join = { type: 'join', playerId };
+        if (JOIN_CODE) {
+          join.code = JOIN_CODE;
+        }
+        socket.send(JSON.stringify(join));
+      });
+
+      socket.on('message', function (raw) {
+        let msg;
+        try {
+          msg = JSON.parse(raw);
+        } catch (e) {
+          return;
+        }
+        if (msg.type !== 'state' || pendientes.length === 0) {
+          return;
+        }
+        const yo = msg.players && msg.players[playerId];
+        if (!yo) {
+          return;
+        }
+        // El servidor aplica los movimientos en orden: el estado confirma el
+        // primer pendiente cuyo destino coincide con mi posicion actual. Los
+        // anteriores a el se dan por perdidos.
+        const i = pendientes.findIndex((p) => p.x === yo.x && p.y === yo.y);
+        if (i < 0) {
+          return;
+        }
+        for (let k = 0; k < i; k++) {
+          movesOmitted.add(1);
+          moveFailed.add(true);
+        }
+        moveLatency.add(Date.now() - pendientes[i].enviadoEn);
         moveFailed.add(false);
-        pendiente = null;
-      }
+        pendientes.splice(0, i + 1);
+      });
+
+      socket.setInterval(function () {
+        const ahora = Date.now();
+        vencer(ahora);
+        const [x, y] = nextPosition(paso++);
+        pendientes.push({ x, y, enviadoEn: ahora });
+        socket.send(JSON.stringify({ type: 'move', playerId, x, y }));
+      }, INTERVAL_MS);
+
+      socket.setTimeout(function () {
+        socket.close();
+      }, durationToMs(DURATION));
     });
-
-    socket.setInterval(function () {
-      // Si el anterior nunca se confirmo, el servidor va por detras.
-      if (pendiente !== null) {
-        movesOmitted.add(1);
-        moveFailed.add(true);
-      }
-      const [x, y] = nextPosition(paso++);
-      pendiente = { x, y, enviadoEn: Date.now() };
-      socket.send(JSON.stringify({ type: 'move', playerId, x, y }));
-    }, INTERVAL_MS);
-
-    socket.setTimeout(function () {
-      socket.close();
-    }, durationToMs(DURATION));
-  });
+    if (res && res.status === 101) {
+      break;
+    }
+    sleep(2);
+  }
 
   check(res, { 'conexion establecida (101)': (r) => r && r.status === 101 });
 }
