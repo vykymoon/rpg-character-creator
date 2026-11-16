@@ -62,6 +62,12 @@ En el Corte 2, `GameSessionServiceTest` tenía dos pruebas con `@Disabled` que d
 
 **Cobertura.** JaCoCo mide la cobertura de líneas de `domain` + `application`. La meta `check` rompe `mvn test` si baja del 80 %; el enunciado pide al menos 70 %. El reporte HTML queda como artefacto en cada ejecución (`reportes-pruebas-unitarias`).
 
+**Nota de medición (Corte 3).** En el Corte 2, en LAN, el script contaba como "sin confirmar" cualquier movimiento que no llegaba antes del siguiente envío (200 ms), y su latencia no entraba en el p95. Por Internet eso marcaba como fallidos movimientos que sí se aplicaban, y además dejaba fuera del p95 justo los más lentos. Ahora:
+- un movimiento es "sin confirmar" solo si no aparece en el estado en 1 s (`CONFIRM_TIMEOUT_MS`);
+- todas las confirmaciones, incluidas las tardías, entran en el p95.
+
+El SLO no cambió (p95 < 150 ms y < 1 % sin confirmar), y la medición del p95 quedó más estricta.
+
 **Pruebas de humo y de carga en el pipeline.** `perf/scripts/smoke_k6.js` recorre el flujo principal contra el entorno desplegado. `perf/scripts/lan_ws_k6.js` corre con 8 jugadores durante 1 minuto con el SLO como *threshold*.
 
 ## Resultados de la ejecución

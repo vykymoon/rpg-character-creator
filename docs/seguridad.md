@@ -68,6 +68,8 @@ Cada hallazgo lleva una de tres decisiones: **corregido** (con el commit), **fal
 | H-07 | 2026-11-15 | Riesgo de diseño | El código de sala es compartido por todos los jugadores: no identifica a cada persona | Media | Riesgo aceptado | Suficiente para una partida entre conocidos. Para corregirlo: cuentas con OAuth (GitHub o Google) y un token firmado por jugador |
 | H-08 | 2026-11-15 | Riesgo de diseño | `ws://` sin TLS en el modo LAN | Baja | Riesgo aceptado | Solo dentro de la red local del anfitrión; en la nube el cliente usa `wss://` |
 | H-09 | 2026-11-16 | Configuración del repositorio | `dependency-review-action` fallaba con "Dependency review is not supported": el *Dependency graph* estaba desactivado, así que el control no estaba revisando nada | Media | Corregido | Se activó en *Settings → Advanced Security → Dependency graph*. El check volvió a correr en el PR #2 |
+| H-10 | 2026-11-16 | DAST (ZAP 10015) | *Re-examine Cache-control Directives*: `Cache-Control: no-store` no incluía `no-cache, must-revalidate` | Baja | Corregido | `securityHeaders` envía `no-store, no-cache, must-revalidate` y `Pragma: no-cache` |
+| H-11 | 2026-11-16 | DAST (ZAP 90005) | *Sec-Fetch-Dest Header is Missing* en 12 peticiones | Informativa | Falso positivo | La regla revisa las cabeceras `Sec-Fetch-*` de la **petición**, que agrega un navegador y no el escáner. No depende del servidor. Se marca `IGNORE` en `.zap/rules.tsv` |
 
 Los hallazgos que reporten las herramientas en las ejecuciones del pipeline se agregan aquí con su enlace a la ejecución de Actions.
 
