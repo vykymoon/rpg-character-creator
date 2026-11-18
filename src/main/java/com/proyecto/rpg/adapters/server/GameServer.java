@@ -99,7 +99,7 @@ public class GameServer {
         cfg.routes.get("/health", this::health);
         cfg.routes.get("/metrics", this::metricsEndpoint);
         cfg.routes.get("/", ctx -> ctx.contentType("text/plain; charset=utf-8")
-                .result("RPG Character Creator - servidor de partida. WebSocket en /ws, estado en /health.\n"));
+                .result("RPG Character Creator - servidor de partida (Corte 3). WebSocket en /ws, estado en /health.\n"));
 
         cfg.routes.ws("/", this::websocket);
         cfg.routes.ws("/ws", this::websocket);
