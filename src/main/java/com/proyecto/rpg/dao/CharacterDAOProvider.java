@@ -42,6 +42,15 @@ public final class CharacterDAOProvider {
         instance = dao;
     }
 
+    /**
+     * Archivo donde el creador guarda los personajes. Lo usa tambien el
+     * multijugador (CharacterLoader) para leer exactamente el mismo archivo,
+     * se ejecute desde IntelliJ o desde el .jar de GitHub Releases.
+     */
+    public static Path storageFile() {
+        return resolveStorageFile();
+    }
+
     static Path resolveStorageFile() {
         String configured = System.getProperty("RPG_DATA_FILE", System.getenv("RPG_DATA_FILE"));
         if (configured != null && !configured.isBlank()) {

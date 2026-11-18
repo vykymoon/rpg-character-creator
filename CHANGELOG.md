@@ -4,6 +4,15 @@ Todos los cambios relevantes del proyecto. El formato sigue [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-18
+
+Corrige el modo multijugador del cliente descargado de GitHub Releases.
+
+### Corregido
+- El multijugador no encontraba los personajes guardados cuando se ejecutaba el `.jar`: el creador guarda en `~/.rpg-character-creator/characters.json` y la partida los buscaba en la carpeta de trabajo, así que pedía elegir el archivo a mano. Ahora lee el mismo archivo que usa el creador (`CharacterDAOProvider.storageFile()`).
+- El botón **Multijugador LAN** del menú cerraba todo el programa si se cancelaba una ventana o no había conexión, y el aviso de error fallaba con `Not on FX application thread`. Ahora vuelve al menú, y al cerrar la partida el menú reaparece.
+- La partida independiente (`--jugar`) propone por defecto el servidor en línea (`wss://rpg-servidor-qz1m.onrender.com/ws`) en vez de `ws://localhost:8887`, y por Internet espera hasta 90 s a que el servidor despierte (antes 3 s, menos de lo que tarda Render gratuito en arrancar).
+
 ### Documentación
 - Evidencia de la reversión probada en producción (`docs/devops.md` §5).
 
