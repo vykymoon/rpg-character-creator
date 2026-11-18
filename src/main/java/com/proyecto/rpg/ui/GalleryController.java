@@ -141,13 +141,19 @@ public class GalleryController {
     @FXML
     public void onPlayMultiplayer(ActionEvent event) {
         try {
-            // Cerramos la ventana del menú actual
             Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            currentStage.close();
 
-            // Iniciamos tu GameApp (el que tiene el mapa del bosque que arreglamos)
+            // La partida se abre dentro del mismo programa (embedded): si el
+            // jugador cancela o no conecta, se queda en el menu en vez de
+            // cerrarse toda la aplicacion.
             Stage multiStage = new Stage();
-            new GameApp().start(multiStage);
+            new GameApp(true).start(multiStage);
+
+            // El menu se oculta solo si la partida abrio, y vuelve al cerrarla.
+            if (multiStage.isShowing()) {
+                currentStage.hide();
+                multiStage.setOnHidden(e -> currentStage.show());
+            }
         } catch (Exception ex) {
             DialogUtils.warning("Error", "No se pudo iniciar el modo multijugador.");
             ex.printStackTrace();

@@ -44,6 +44,18 @@ public class GameApp extends Application {
 
     private record PV(int x, int y, String name, String cls) {}
 
+    /** Servidor publico desplegado por el pipeline (Render). */
+    static final String PUBLIC_SERVER_URL = "wss://rpg-servidor-qz1m.onrender.com/ws";
+    /** Servidor LAN que levanta el boton "Iniciar servidor" del menu. */
+    static final String LAN_SERVER_URL = "ws://localhost:8887";
+
+    /**
+     * true cuando la partida se abre desde el menu del creador (boton
+     * "Multijugador LAN") dentro del mismo programa. En ese caso un error o
+     * cancelar no debe cerrar toda la aplicacion, solo volver al menu.
+     */
+    private final boolean embedded;
+
     private final Gson gson = new Gson();
     private final Map<String, PV> players = new ConcurrentHashMap<>();
     private volatile String[] mapRows;
@@ -52,13 +64,26 @@ public class GameApp extends Application {
     private Canvas canvas;
     private javafx.scene.image.Image mapImage;
 
+    /** Partida independiente: java -jar rpg-cliente.jar --jugar. */
+    public GameApp() {
+        this(false);
+    }
+
+    /** @param embedded true si se abre desde el menu del creador. */
+    public GameApp(boolean embedded) {
+        this.embedded = embedded;
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
         CharacterLoader.Info hero = pickCharacter();
-        if (hero == null) { Platform.exit(); return; }
+        if (hero == null) { abort(); return; }
 
-        String url = ask("Servidor", "URL del servidor (ws:// en LAN, wss:// en la nube):", "ws://localhost:8887");
-        if (url == null) { Platform.exit(); return; }
+        String defaultUrl = embedded ? LAN_SERVER_URL : PUBLIC_SERVER_URL;
+        String url = ask("Servidor",
+                "URL del servidor.\nEn linea: " + PUBLIC_SERVER_URL + "\nEn LAN: ws://<ip-del-anfitrion>:8887",
+                defaultUrl);
+        if (url == null) { abort(); return; }
         // Codigo de sala (JOIN_CODE del servidor). Vacio en una partida LAN abierta.
         String joinCode = ask("Sala", "Codigo de sala (deje vacio si el servidor no lo pide):", "");
 
@@ -66,9 +91,15 @@ public class GameApp extends Application {
 
         client = new GameClient(new URI(url));
         client.setOnState(this::handleMessage);
-        if (!client.connectBlocking(3, TimeUnit.SECONDS)) {
-            new Alert(Alert.AlertType.ERROR, "No se pudo conectar a " + url).showAndWait();
-            Platform.exit();
+        // El plan gratuito de Render duerme el servidor y tarda ~50 s en
+        // despertar: por Internet (wss://) se espera hasta 90 s; en LAN, 3 s.
+        int timeoutSeconds = url.startsWith("wss://") ? 90 : 3;
+        if (!client.connectBlocking(timeoutSeconds, TimeUnit.SECONDS)) {
+            new Alert(Alert.AlertType.ERROR, "No se pudo conectar a " + url
+                    + "\n\nRevise la URL. En LAN, que el anfitrion tenga el servidor encendido"
+                    + " y el puerto 8887 abierto en el firewall.")
+                    .showAndWait();
+            abort();
             return;
         }
 
@@ -106,7 +137,10 @@ public class GameApp extends Application {
         stage.setTitle("RPG LAN - " + hero.name);
         stage.setScene(scene);
         stage.setResizable(false);
-        stage.setOnCloseRequest(e -> { client.close(); Platform.exit(); });
+        stage.setOnCloseRequest(e -> {
+            client.close();
+            if (!embedded) Platform.exit();
+        });
         stage.show();
 
         // Fondo del mapa multijugador. Se lee del classpath para que funcione
@@ -299,6 +333,15 @@ public class GameApp extends Application {
             g.setFill(Color.WHITE);
             g.fillText(p.name(), p.x() * CELL - 4, p.y() * CELL - 2);
         }
+    }
+
+    /**
+     * Termina la partida sin abrirla. Como programa independiente cierra la
+     * aplicacion; abierta desde el menu solo regresa a el (antes cerraba todo
+     * el creador y el aviso de error fallaba con "Not on FX application thread").
+     */
+    private void abort() {
+        if (!embedded) Platform.exit();
     }
 
     private String ask(String title, String header, String def) {

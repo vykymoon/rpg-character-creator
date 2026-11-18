@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.proyecto.rpg.dao.CharacterDAOProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,6 +38,11 @@ public class CharacterLoader {
     };
 
     public static Path findDefault() {
+        // Primero el archivo donde el creador guarda de verdad. Desde el .jar
+        // de Releases es ~/.rpg-character-creator/characters.json, no la
+        // carpeta desde la que se ejecuta el juego.
+        Path saved = CharacterDAOProvider.storageFile();
+        if (Files.exists(saved)) return saved;
         for (String c : CANDIDATES) {
             Path p = Path.of(c);
             if (Files.exists(p)) return p;
